@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { BookOpen, Search, SlidersHorizontal, Skull } from 'lucide-react'
-import type { CreatureType } from '../types/creature'
-import { mockCreatures } from '../data/mockCreatures'
+import type { Creature, CreatureType } from '../types/creature'
+import { supabase } from '../lib/supabaseClient'
 import { CreatureCard } from '../components/CreatureCard'
 
 const creatureTypeOptions: { value: CreatureType | 'all'; label: string }[] = [
@@ -16,21 +16,34 @@ const creatureTypeOptions: { value: CreatureType | 'all'; label: string }[] = [
 ]
 
 function LibraryPage() {
+  const [creatures, setCreatures] = useState<Creature[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [region, setRegion] = useState('')
   const [creatureType, setCreatureType] = useState<CreatureType | 'all'>('all')
 
+  useEffect(() => {
+    supabase
+      .from('creatures')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) setCreatures(data as Creature[])
+        setLoading(false)
+      })
+  }, [])
+
   const regions = useMemo(
     () =>
-      Array.from(new Set(mockCreatures.map((c) => c.region))).sort((a, b) =>
+      Array.from(new Set(creatures.map((c) => c.region).filter((r): r is string => r !== null))).sort((a, b) =>
         a.localeCompare(b),
       ),
-    [],
+    [creatures],
   )
 
   const filtered = useMemo(
     () =>
-      mockCreatures.filter((c) => {
+      creatures.filter((c) => {
         const matchesSearch =
           !search ||
           c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -41,7 +54,7 @@ function LibraryPage() {
         const matchesType = creatureType === 'all' || c.creature_type === creatureType
         return matchesSearch && matchesRegion && matchesType
       }),
-    [search, region, creatureType],
+    [creatures, search, region, creatureType],
   )
 
   return (
@@ -64,11 +77,11 @@ function LibraryPage() {
         <div className="mt-5 flex flex-wrap gap-4">
           <div className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2">
             <Skull className="h-3.5 w-3.5 text-gold" />
-            <span className="font-ui text-xs text-parchment">{mockCreatures.length} entries catalogued</span>
+            <span className="font-ui text-xs text-parchment">{creatures.length} entries catalogued</span>
           </div>
           <div className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2">
             <span className="h-1.5 w-1.5 rounded-full bg-crimson animate-pin-pulse" />
-            <span className="font-ui text-xs text-parchment">{mockCreatures.filter(c => !c.verified).length} unverified sightings</span>
+            <span className="font-ui text-xs text-parchment">{creatures.filter(c => !c.verified).length} unverified sightings</span>
           </div>
         </div>
       </header>
@@ -98,7 +111,7 @@ function LibraryPage() {
         >
           <option value="">All regions</option>
           {regions.map((r) => (
-            <option key={r} value={r}>{r}</option>
+            <option key={r} value={r ?? ''}>{r}</option>
           ))}
         </select>
         <select
@@ -115,7 +128,13 @@ function LibraryPage() {
 
       {/* Grid */}
       <section aria-label="Creature list">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-56 animate-pulse rounded-xl border border-app-border bg-app-surface" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
             <Skull className="h-8 w-8 text-parchment-dim" />
             <p className="font-heading text-base text-gold/70">

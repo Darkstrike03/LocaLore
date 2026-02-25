@@ -1,15 +1,42 @@
-import { useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Eye, BookMarked, Sword, ShieldAlert, Skull, Calendar, Tag, AlertTriangle } from 'lucide-react'
-import { mockCreatures } from '../data/mockCreatures'
+import type { Creature } from '../types/creature'
+import { supabase } from '../lib/supabaseClient'
 
 function CreatureProfilePage() {
   const { id } = useParams<{ id: string }>()
+  const [creature, setCreature] = useState<Creature | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const creature = useMemo(
-    () => mockCreatures.find((c) => c.id === id),
-    [id],
-  )
+  useEffect(() => {
+    if (!id) { setLoading(false); return }
+    supabase
+      .from('creatures')
+      .select('*')
+      .eq('id', id)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) setCreature(data as Creature)
+        setLoading(false)
+      })
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="absolute inset-0 rounded-full border border-gold/30 animate-glow-pulse" />
+            <Eye className="h-5 w-5 text-gold animate-flicker" />
+          </span>
+          <p className="font-heading text-xs uppercase tracking-[0.3em] text-parchment-muted">
+            Summoning the record...
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (!creature) {
     return (

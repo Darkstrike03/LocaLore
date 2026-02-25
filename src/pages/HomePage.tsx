@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { MapContainer as RLMapContainer, Marker as RLMarker, Popup, TileLayer as RLTileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
 import { Eye, MapPin, Skull, ShieldAlert, Sword, BookMarked, ChevronRight } from 'lucide-react'
 import type { Creature } from '../types/creature'
-import { mockCreatures } from '../data/mockCreatures'
+import { supabase } from '../lib/supabaseClient'
 
 const WORLD_CENTER: [number, number] = [25, 20]
 
@@ -69,8 +69,22 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
 }
 
 function HomePage() {
+  const [creatures, setCreatures] = useState<Creature[]>([])
+  const [mapLoading, setMapLoading] = useState(true)
   const [selected, setSelected] = useState<Creature | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(false)
+
+  useEffect(() => {
+    supabase
+      .from('creatures')
+      .select('*')
+      .not('latitude', 'is', null)
+      .not('longitude', 'is', null)
+      .then(({ data, error }) => {
+        if (!error && data) setCreatures(data as Creature[])
+        setMapLoading(false)
+      })
+  }, [])
 
   const Map: any = RLMapContainer
   const DarkTile: any = RLTileLayer
@@ -85,7 +99,7 @@ function HomePage() {
     <div className="relative flex h-[calc(100dvh-3.5rem)] flex-col md:flex-row bg-void overflow-hidden">
 
       {/* ── MAP ── */}
-      <div className="relative flex-1 min-h-[55vh] md:min-h-0">
+      <div className="relative flex-1 min-h-[55vh] md:min-h-0 z-0">
         <Map
           center={WORLD_CENTER}
           zoom={3}
@@ -98,7 +112,20 @@ function HomePage() {
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
-          {mockCreatures.map((creature) => (
+          {mapLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-void/80 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <span className="relative flex h-10 w-10 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full border border-gold/30 animate-glow-pulse" />
+                  <Eye className="h-5 w-5 text-gold animate-flicker" />
+                </span>
+                <p className="font-heading text-[10px] uppercase tracking-[0.3em] text-parchment-muted">
+                  Consulting the archive...
+                </p>
+              </div>
+            </div>
+          )}
+          {creatures.map((creature) => (
             <RMarker
               key={creature.id}
               position={[creature.latitude, creature.longitude]}
@@ -131,7 +158,7 @@ function HomePage() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-void/40 to-transparent" />
 
         {/* Map legend */}
-        <div className="absolute bottom-4 left-4 z-[400] flex flex-col gap-1.5 rounded-xl border border-app-border bg-void/90 backdrop-blur-xl px-3 py-2.5 text-[10px] font-ui">
+        <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 rounded-xl border border-app-border bg-void/90 backdrop-blur-xl px-3 py-2.5 text-[10px] font-ui">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full border border-gold bg-app-surface" />
             <span className="text-parchment-muted uppercase tracking-wider">Verified</span>
@@ -147,7 +174,7 @@ function HomePage() {
           <button
             type="button"
             onClick={() => setSidebarVisible(true)}
-            className="absolute bottom-4 right-4 z-[400] flex items-center gap-2 rounded-xl border border-gold/40 bg-void/95 backdrop-blur-xl px-4 py-2.5 font-heading text-xs tracking-[0.2em] uppercase text-gold shadow-gold-glow md:hidden"
+            className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-xl border border-gold/40 bg-void/95 backdrop-blur-xl px-4 py-2.5 font-heading text-xs tracking-[0.2em] uppercase text-gold shadow-gold-glow md:hidden"
           >
             <Eye className="h-3.5 w-3.5" />
             View lore
@@ -158,7 +185,7 @@ function HomePage() {
       {/* ── SIDEBAR ── */}
       <aside
         className={`
-          absolute inset-x-0 bottom-0 z-[500] flex flex-col
+          absolute inset-x-0 bottom-0 z-20 flex flex-col
           md:relative md:inset-auto md:z-auto
           md:w-[360px] lg:w-[400px] xl:w-[440px]
           border-t border-app-border md:border-t-0 md:border-l md:border-app-border

@@ -24,6 +24,7 @@ export const mockCreatures: Creature[] = [
     source: 'ai_collected',
     submitted_by: null,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: 'tengu-1',
@@ -48,6 +49,7 @@ export const mockCreatures: Creature[] = [
     source: 'ai_collected',
     submitted_by: null,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
   {
     id: 'kitsune-1',
@@ -72,6 +74,7 @@ export const mockCreatures: Creature[] = [
     source: 'ai_collected',
     submitted_by: null,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   },
 ]
 

@@ -1,10 +1,13 @@
-import type { FormEvent } from 'react'
+﻿import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
 import { MapContainer as RLMapContainer, Marker, TileLayer as RLTileLayer, useMapEvents } from 'react-leaflet'
-import { Scroll, MapPin, ImagePlus, AlertTriangle, LogIn } from 'lucide-react'
+import {
+  Scroll, MapPin, ImagePlus, AlertTriangle, CheckCircle2,
+  Skull, Sparkles, Ghost, Waves, Layers, HelpCircle,
+} from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
-import { useAuth } from '../components/AuthProvider'
+import { uploadImage } from '../lib/imgbb'
+import { useAuth } from '../context/AuthContext'
 import type { CreatureType } from '../types/creature'
 
 const WORLD_CENTER: [number, number] = [25, 20]
@@ -17,7 +20,6 @@ function LocationPicker({
   onChange: (coords: { lat: number; lng: number }) => void
 }) {
   useMapEvents({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     click(e: any) {
       onChange({ lat: e.latlng.lat, lng: e.latlng.lng })
     },
@@ -25,87 +27,104 @@ function LocationPicker({
   return value ? <Marker position={[value.lat, value.lng]} /> : null
 }
 
-const typeOptions: { value: CreatureType; label: string }[] = [
-  { value: 'spirit', label: 'Spirit' },
-  { value: 'demon', label: 'Demon' },
-  { value: 'trickster', label: 'Trickster' },
-  { value: 'water_creature', label: 'Water creature' },
-  { value: 'shapeshifter', label: 'Shapeshifter' },
-  { value: 'undead', label: 'Undead' },
-  { value: 'other', label: 'Other' },
+const TYPE_OPTIONS: { value: CreatureType; label: string; Icon: React.ElementType }[] = [
+  { value: 'spirit',         label: 'Spirit',       Icon: Sparkles },
+  { value: 'demon',          label: 'Demon',        Icon: Skull },
+  { value: 'trickster',      label: 'Trickster',    Icon: HelpCircle },
+  { value: 'water_creature', label: 'Water',        Icon: Waves },
+  { value: 'shapeshifter',   label: 'Shapeshifter', Icon: Layers },
+  { value: 'undead',         label: 'Undead',       Icon: Ghost },
+  { value: 'other',          label: 'Other',        Icon: HelpCircle },
 ]
 
 const LABEL = 'mb-1.5 block font-ui text-[11px] uppercase tracking-[0.2em] text-parchment-muted'
-const TA = 'input-forge resize-none'
+const TA    = 'input-forge resize-none'
 
 function SubmitCreaturePage() {
-  const { user, loading } = useAuth()
-  const navigate = useNavigate()
-  const [name, setName] = useState('')
+  const { user, loading, openAuthModal } = useAuth()
+
+  const [name, setName]                     = useState('')
   const [alternateNames, setAlternateNames] = useState('')
-  const [region, setRegion] = useState('')
-  const [country, setCountry] = useState('Japan')
-  const [locality, setLocality] = useState('')
-  const [creatureType, setCreatureType] = useState<CreatureType>('spirit')
-  const [description, setDescription] = useState('')
-  const [originStory, setOriginStory] = useState('')
-  const [abilities, setAbilities] = useState('')
-  const [survivalTips, setSurvivalTips] = useState('')
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [file, setFile] = useState<File | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [region, setRegion]                 = useState('')
+  const [country, setCountry]               = useState('')
+  const [locality, setLocality]             = useState('')
+  const [creatureType, setCreatureType]     = useState<CreatureType>('spirit')
+  const [description, setDescription]       = useState('')
+  const [originStory, setOriginStory]       = useState('')
+  const [abilities, setAbilities]           = useState('')
+  const [survivalTips, setSurvivalTips]     = useState('')
+  const [location, setLocation]             = useState<{ lat: number; lng: number } | null>(null)
+
+  const [file, setFile]                 = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploading, setUploading]       = useState(false)
+
+  const [error, setError]       = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess]   = useState(false)
 
   const Map: any = RLMapContainer
   const DarkTile: any = RLTileLayer
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = e.target.files?.[0] ?? null
+    setFile(picked)
+    setImagePreview(picked ? URL.createObjectURL(picked) : null)
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!user) return
+    if (!user) { openAuthModal(); return }
+
+    if (!name.trim())        { setError('Name is required.'); return }
+    if (!description.trim()) { setError('Description is required.'); return }
+    if (!creatureType)       { setError('Creature type is required.'); return }
+    if (!locality.trim() && !location) {
+      setError('Please enter a locality or pin a location on the map.')
+      return
+    }
+
     setError(null)
     setSubmitting(true)
 
     try {
       let imageUrl: string | null = null
-
       if (file) {
-        const fileExt = file.name.split('.').pop()
-        const path = `creatures/${crypto.randomUUID()}.${fileExt}`
-        const { error: uploadError } = await supabase.storage
-          .from('creature-images')
-          .upload(path, file)
-        if (uploadError) throw uploadError
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('creature-images').getPublicUrl(path)
-        imageUrl = publicUrl
+        setUploading(true)
+        imageUrl = await uploadImage(file)
+        setUploading(false)
       }
 
-      const { error: insertError } = await supabase.from('creatures').insert({
-        name,
+      const { error: insertError } = await supabase.from('submissions').insert({
+        submitted_by:   user.id,
+        name:           name.trim(),
         alternate_names: alternateNames
-          ? alternateNames.split(',').map((s) => s.trim())
+          ? alternateNames.split(',').map((s) => s.trim()).filter(Boolean)
           : [],
-        region,
-        country,
-        locality,
-        latitude: location?.lat ?? null,
-        longitude: location?.lng ?? null,
+        region:        region.trim()       || null,
+        country:       country.trim()      || null,
+        locality:      locality.trim()     || null,
+        latitude:      location?.lat       ?? null,
+        longitude:     location?.lng       ?? null,
         creature_type: creatureType,
-        description,
-        origin_story: originStory,
-        abilities,
-        survival_tips: survivalTips,
-        image_url: imageUrl,
-        verified: false,
-        source: 'user_submitted',
-        submitted_by: user.id,
+        description:   description.trim(),
+        origin_story:  originStory.trim()  || null,
+        abilities:     abilities.trim()    || null,
+        survival_tips: survivalTips.trim() || null,
+        image_url:     imageUrl,
       })
 
       if (insertError) throw insertError
-      navigate('/library')
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to submit creature')
+
+      setSuccess(true)
+      setName(''); setAlternateNames(''); setRegion(''); setCountry('')
+      setLocality(''); setDescription(''); setOriginStory('')
+      setAbilities(''); setSurvivalTips('')
+      setCreatureType('spirit'); setLocation(null)
+      setFile(null); setImagePreview(null)
+    } catch (err: unknown) {
+      setUploading(false)
+      setError(err instanceof Error ? err.message : 'Failed to submit creature — please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -127,13 +146,17 @@ function SubmitCreaturePage() {
         <div className="w-full max-w-md rounded-2xl border border-app-border bg-app-surface p-8 text-center shadow-void-deep">
           <Scroll className="mx-auto mb-4 h-8 w-8 text-gold/60" />
           <h1 className="font-heading text-xl text-gold">Only sworn witnesses may file.</h1>
-          <p className="mt-2 font-body text-sm text-parchment-muted">
+          <p className="mt-2 font-body text-sm text-parchment-muted leading-relaxed">
             You must be signed in to submit a new creature. This protects the integrity of the archive.
           </p>
-          <Link to="/auth" className="btn-summon mt-5 inline-flex">
-            <LogIn className="h-3.5 w-3.5" />
+          <button
+            type="button"
+            onClick={openAuthModal}
+            className="btn-summon mt-5 inline-flex"
+          >
+            <Scroll className="h-3.5 w-3.5" />
             Enter the archive
-          </Link>
+          </button>
         </div>
       </div>
     )
@@ -151,16 +174,37 @@ function SubmitCreaturePage() {
         <h1 className="font-heading text-3xl text-gold">Submit a Creature</h1>
         <p className="mt-2 font-body text-sm text-parchment-muted max-w-lg leading-relaxed">
           Add a local legend to the living atlas. Entries begin as{' '}
-          <span className="text-crimson-DEFAULT/80">unverified</span> until cross-checked against primary sources.
+          <span className="text-crimson/80">unverified</span> until cross-checked against primary sources.
         </p>
       </header>
+
+      {/* Success banner */}
+      {success && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-gold/40 bg-gold/10 px-4 py-4">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
+          <div>
+            <p className="font-heading text-sm text-gold">Your creature has been documented.</p>
+            <p className="mt-0.5 font-ui text-xs text-parchment-muted">
+              It will remain unverified until cross-referenced by an archivist. Thank you for contributing to the record.
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setSuccess(false)}
+            className="ml-auto text-parchment-dim hover:text-gold shrink-0"
+          >
+            •
+          </button>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}
         className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]"
       >
 
-        {/* ── LEFT: text fields ── */}
+        {/* '”€'”€ LEFT: text fields '”€'”€ */}
         <section className="space-y-4">
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -178,14 +222,14 @@ function SubmitCreaturePage() {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className={LABEL} htmlFor="region">Region *</label>
-              <input id="region" required value={region} onChange={(e) => setRegion(e.target.value)}
+              <label className={LABEL} htmlFor="region">Region</label>
+              <input id="region" value={region} onChange={(e) => setRegion(e.target.value)}
                 className="input-forge" placeholder="e.g. Kansai" />
             </div>
             <div>
-              <label className={LABEL} htmlFor="country">Country *</label>
-              <input id="country" required value={country} onChange={(e) => setCountry(e.target.value)}
-                className="input-forge" />
+              <label className={LABEL} htmlFor="country">Country</label>
+              <input id="country" value={country} onChange={(e) => setCountry(e.target.value)}
+                className="input-forge" placeholder="e.g. Japan" />
             </div>
             <div>
               <label className={LABEL} htmlFor="locality">Locality</label>
@@ -194,16 +238,26 @@ function SubmitCreaturePage() {
             </div>
           </div>
 
+          {/* Creature type '€” pill buttons */}
           <div>
-            <label className={LABEL} htmlFor="type">Creature type</label>
-            <select id="type" value={creatureType}
-              onChange={(e) => setCreatureType(e.target.value as CreatureType)}
-              className="input-forge"
-            >
-              {typeOptions.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+            <p className={LABEL}>Creature type *</p>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {TYPE_OPTIONS.map(({ value, label, Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setCreatureType(value)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-ui text-[11px] uppercase tracking-[0.15em] transition-all duration-150 ${
+                    creatureType === value
+                      ? 'border-gold/50 bg-gold/10 text-gold'
+                      : 'border-app-border text-parchment-muted hover:border-gold/30 hover:text-parchment'
+                  }`}
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div>
@@ -236,8 +290,8 @@ function SubmitCreaturePage() {
           </div>
         </section>
 
-        {/* ── RIGHT: map + image + submit ── */}
-        <aside className="space-y-5 flex flex-col">
+        {/* '”€'”€ RIGHT: map + image + submit '”€'”€ */}
+        <aside className="flex flex-col space-y-5">
 
           {/* Location picker */}
           <div>
@@ -269,47 +323,71 @@ function SubmitCreaturePage() {
 
           {/* Image upload */}
           <div>
-            <label className={`${LABEL} flex items-center gap-1.5`} htmlFor="image">
+            <label className={`${LABEL} flex items-center gap-1.5`}>
               <ImagePlus className="h-3 w-3" />
               Image upload
             </label>
-            <label
-              htmlFor="image"
-              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-app-border bg-app-surface px-4 py-6 text-center transition hover:border-gold/40"
-            >
-              <ImagePlus className="h-5 w-5 text-parchment-dim" />
-              <span className="font-ui text-xs text-parchment-muted">
-                {file ? file.name : 'Click to upload an image'}
-              </span>
-              <span className="font-ui text-[10px] text-parchment-dim">
-                PNG, JPG, WEBP — artwork or symbolic depictions preferred
-              </span>
-              <input
-                id="image"
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
+
+            {imagePreview ? (
+              <div className="relative mb-2 overflow-hidden rounded-xl border border-gold/30">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="h-40 w-full object-cover opacity-80"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setFile(null); setImagePreview(null) }}
+                  className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-void/80 text-parchment-muted hover:text-gold text-xs"
+                  aria-label="Remove image"
+                >
+                  •
+                </button>
+              </div>
+            ) : (
+              <label
+                htmlFor="image"
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-app-border bg-app-surface px-4 py-6 text-center transition hover:border-gold/40"
+              >
+                <ImagePlus className="h-5 w-5 text-parchment-dim" />
+                <span className="font-ui text-xs text-parchment-muted">Click to upload an image</span>
+                <span className="font-ui text-[10px] text-parchment-dim">
+                  PNG, JPG, WEBP '€” artwork or symbolic depictions preferred
+                </span>
+              </label>
+            )}
+
+            <input
+              id="image"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleFileChange}
+            />
+
+            {uploading && (
+              <p className="mt-1.5 font-ui text-[11px] text-parchment-muted animate-flicker">
+                Uploading image to the void...
+              </p>
+            )}
           </div>
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-crimson/40 bg-crimson-dark/20 px-3 py-2.5">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson-DEFAULT/80" />
-              <p className="font-ui text-xs text-crimson-DEFAULT/90">{error}</p>
+            <div className="flex items-start gap-2 rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-2.5">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson/80" />
+              <p className="font-ui text-xs text-crimson/90">{error}</p>
             </div>
           )}
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || uploading}
             className="btn-summon w-full disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
           >
             <Scroll className="h-3.5 w-3.5" />
-            {submitting ? 'Filing with the archive...' : 'Submit creature'}
+            {uploading ? 'Uploading...' : submitting ? 'Filing with the archive...' : 'Submit creature'}
           </button>
         </aside>
       </form>
