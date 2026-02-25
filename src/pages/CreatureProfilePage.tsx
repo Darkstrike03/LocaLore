@@ -35,11 +35,11 @@ function CreatureProfilePage() {
     ;(async () => {
       const { data, error } = await supabase
         .from('users')
-        .select('is_moderator, role')
+        .select('role')
         .eq('id', user.id)
         .maybeSingle()
       if (!error && data && mounted) {
-        setIsModerator(Boolean(data.is_moderator) || data.role === 'moderator')
+        setIsModerator(data.role === 'moderator')
       }
     })()
     return () => { mounted = false }
