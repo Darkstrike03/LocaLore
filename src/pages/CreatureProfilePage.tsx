@@ -1,13 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Eye, BookMarked, Sword, ShieldAlert, Skull, Calendar, Tag, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Eye, BookMarked, Sword, ShieldAlert, Skull, Calendar, Tag, AlertTriangle, ImagePlus } from 'lucide-react'
 import type { Creature } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../context/AuthContext'
+import { uploadImage } from '../lib/imgbb'
 
 function CreatureProfilePage() {
   const { slug } = useParams<{ slug: string }>()
   const [creature, setCreature] = useState<Creature | null>(null)
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const [isModerator, setIsModerator] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const fileRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!slug) { setLoading(false); return }
@@ -21,6 +27,23 @@ function CreatureProfilePage() {
         setLoading(false)
       })
   }, [slug])
+
+  // check moderator status
+  useEffect(() => {
+    if (!user) return
+    let mounted = true
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('is_moderator, role')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (!error && data && mounted) {
+        setIsModerator(Boolean(data.is_moderator) || data.role === 'moderator')
+      }
+    })()
+    return () => { mounted = false }
+  }, [user])
 
   if (loading) {
     return (
@@ -170,6 +193,46 @@ function CreatureProfilePage() {
                   timeStyle: 'short',
                 })}
               </p>
+                {isModerator && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0]
+                        if (!f || !creature) return
+                        setUploadingImage(true)
+                        try {
+                          const url = await uploadImage(f)
+                          const { error } = await supabase
+                            .from('creatures')
+                            .update({ image_url: url })
+                            .eq('id', creature.id)
+                          if (error) throw error
+                          setCreature({ ...creature, image_url: url })
+                          alert('Image updated')
+                        } catch (err) {
+                          console.error(err)
+                          alert('Failed to upload image')
+                        } finally {
+                          setUploadingImage(false)
+                          if (fileRef.current) fileRef.current.value = ''
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      className="btn-ghost flex items-center gap-2"
+                      disabled={uploadingImage}
+                    >
+                      <ImagePlus className="h-4 w-4" />
+                      {uploadingImage ? 'Uploading…' : 'Upload image (moderator)'}
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
 
