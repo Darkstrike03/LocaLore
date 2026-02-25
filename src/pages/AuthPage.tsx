@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, EyeOff, LogOut, Scroll, User } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../components/AuthProvider'
 
@@ -8,9 +9,11 @@ function AuthPage() {
   const { user, loading, signOut } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [signupDone, setSignupDone] = useState(false)
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
@@ -25,6 +28,7 @@ function AuthPage() {
       } else {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
+        setSignupDone(true)
       }
     } catch (err: any) {
       setError(err.message ?? 'Authentication failed')
@@ -35,118 +39,171 @@ function AuthPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-sm text-slate-300">
-        Checking the wards around the archive...
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="relative flex h-10 w-10 items-center justify-center">
+            <span className="absolute inset-0 rounded-full border border-gold/30 animate-glow-pulse" />
+            <Eye className="h-5 w-5 text-gold animate-flicker" />
+          </span>
+          <p className="font-heading text-xs uppercase tracking-[0.3em] text-parchment-muted">
+            Checking the wards...
+          </p>
+        </div>
       </div>
     )
   }
 
   if (user) {
     return (
-      <div className="mx-auto max-w-md px-4 py-8 text-sm text-slate-200">
-        <h1 className="font-gothic text-2xl font-semibold text-amber-400">
-          You are inside the stacks.
-        </h1>
-        <p className="mt-2 text-xs text-slate-400">
-          Signed in as <span className="font-mono text-slate-200">{user.email}</span>.
-        </p>
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            className="rounded-lg border border-slate-700 bg-slate-950/80 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-100 hover:border-amber-500 hover:text-amber-300"
-            onClick={() => navigate('/submit')}
-          >
-            Submit a creature
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-slate-800 bg-black/80 px-4 py-2 text-xs text-slate-300 hover:border-red-500 hover:text-red-300"
-            onClick={() => {
-              void signOut().then(() => navigate('/'))
-            }}
-          >
-            Sign out
-          </button>
+      <div className="flex min-h-[60vh] items-center justify-center px-4 animate-rise">
+        <div className="w-full max-w-md rounded-2xl border border-app-border bg-app-surface p-8 shadow-void-deep text-center">
+          {/* Eye icon */}
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-gold/30 bg-app-background shadow-gold-glow">
+            <User className="h-7 w-7 text-gold" />
+          </div>
+          <h1 className="font-heading text-2xl text-gold">You are inside the stacks.</h1>
+          <p className="mt-2 font-body text-base text-parchment-muted">
+            Signed in as{' '}
+            <span className="font-ui text-sm text-parchment">{user.email}</span>.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              type="button"
+              className="btn-summon w-full"
+              onClick={() => navigate('/submit')}
+            >
+              <Scroll className="h-3.5 w-3.5" />
+              Submit a creature
+            </button>
+            <button
+              type="button"
+              className="btn-ghost w-full text-crimson-DEFAULT/80 border-crimson/30 hover:border-crimson/60 hover:text-crimson"
+              onClick={() => { void signOut().then(() => navigate('/')) }}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Leave the archive
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (signupDone) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4 animate-rise">
+        <div className="w-full max-w-md rounded-2xl border border-gold/30 bg-app-surface p-8 shadow-gold-glow text-center">
+          <Eye className="mx-auto mb-4 h-8 w-8 text-gold" />
+          <h1 className="font-heading text-xl text-gold">Account created.</h1>
+          <p className="mt-2 font-body text-sm text-parchment-muted">
+            Check your email to confirm your initiation. Once confirmed, you may enter.
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-8">
-      <h1 className="font-gothic text-2xl font-semibold text-amber-400">
-        Enter the archive
-      </h1>
-      <p className="mt-1 text-xs text-slate-400">
-        Create an account or sign in to submit new creatures and local legends.
-      </p>
-      <div className="mt-4 flex gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() => setMode('signin')}
-          className={`flex-1 rounded-lg border px-3 py-1.5 ${
-            mode === 'signin'
-              ? 'border-amber-500 bg-amber-500/10 text-amber-200'
-              : 'border-slate-700 bg-slate-950/70 text-slate-300'
-          }`}
-        >
-          Sign in
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('signup')}
-          className={`flex-1 rounded-lg border px-3 py-1.5 ${
-            mode === 'signup'
-              ? 'border-amber-500 bg-amber-500/10 text-amber-200'
-              : 'border-slate-700 bg-slate-950/70 text-slate-300'
-          }`}
-        >
-          Sign up
-        </button>
-      </div>
+    <div className="flex min-h-[60vh] items-center justify-center px-4 py-10 animate-rise">
+      <div className="w-full max-w-md">
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-3 text-xs">
-        <div>
-          <label className="mb-1 block text-slate-300" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          />
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border border-gold/30 bg-app-surface shadow-gold-glow">
+            <Eye className="h-7 w-7 text-gold" />
+          </div>
+          <h1 className="font-heading text-2xl text-gold">
+            {mode === 'signin' ? 'Enter the archive' : 'Seek initiation'}
+          </h1>
+          <p className="mt-1.5 font-body text-sm text-parchment-muted">
+            {mode === 'signin'
+              ? 'Sign in to submit sightings and expand the bestiary.'
+              : 'Create an account to begin filing creature accounts.'}
+          </p>
         </div>
-        <div>
-          <label className="mb-1 block text-slate-300" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-          />
+
+        {/* Mode toggle */}
+        <div className="mb-5 flex rounded-lg border border-app-border bg-app-surface p-1">
+          {(['signin', 'signup'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => { setMode(m); setError(null) }}
+              className={`flex-1 rounded-md py-2 font-ui text-xs uppercase tracking-[0.2em] transition-all duration-200 ${
+                mode === m
+                  ? 'bg-gold/10 text-gold border border-gold/30'
+                  : 'text-parchment-muted hover:text-parchment'
+              }`}
+            >
+              {m === 'signin' ? 'Sign in' : 'Sign up'}
+            </button>
+          ))}
         </div>
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-2 w-full rounded-lg border border-amber-500 bg-amber-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
-        >
-          {submitting
-            ? mode === 'signin'
-              ? 'Signing in...'
-              : 'Creating account...'
-            : mode === 'signin'
-              ? 'Sign in'
-              : 'Sign up'}
-        </button>
-      </form>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="mb-1.5 block font-ui text-[11px] uppercase tracking-[0.2em] text-parchment-muted">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input-forge"
+              placeholder="your@email.com"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="mb-1.5 block font-ui text-[11px] uppercase tracking-[0.2em] text-parchment-muted">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPw ? 'text' : 'password'}
+                required
+                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-forge pr-10"
+                placeholder="············"
+              />
+              <button
+                type="button"
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                onClick={() => setShowPw(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-parchment-dim hover:text-parchment transition-colors"
+              >
+                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-lg border border-crimson/40 bg-crimson-dark/20 px-3 py-2.5">
+              <p className="font-ui text-xs text-crimson-DEFAULT/90">{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-summon mt-2 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting
+              ? (mode === 'signin' ? 'Opening the gate...' : 'Inscribing your name...')
+              : (mode === 'signin' ? 'Enter' : 'Request initiation')}
+          </button>
+        </form>
+
+        <p className="mt-6 text-center font-body text-xs italic text-parchment-dim">
+          All who enter leave a trace in the archive.
+        </p>
+      </div>
     </div>
   )
 }

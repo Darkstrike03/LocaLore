@@ -2,15 +2,58 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- Favicon: embedded SVG eye rune -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23050507' stroke='%23C8A84B' stroke-width='1.5'/%3E%3Cellipse cx='16' cy='16' rx='8' ry='5' fill='none' stroke='%23C8A84B' stroke-width='1.2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23C8A84B'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LocaLore - Global Folklore Atlas</title>
+
+    <!-- Primary SEO -->
+    <title>LocaLore — Global Folklore &amp; Creature Atlas</title>
+    <meta name="description" content="LocaLore is a living bestiary and interactive map of folklore creatures, yokai, spirits, and local legends from around the world. Explore the dark archive." />
+    <meta name="keywords" content="folklore, creatures, yokai, bestiary, mythology, spirits, legends, monsters, dark archive, local lore" />
+    <meta name="author" content="LocaLore" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://localore.app/" />
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://localore.app/" />
+    <meta property="og:title" content="LocaLore — Global Folklore &amp; Creature Atlas" />
+    <meta property="og:description" content="A living bestiary of folklore creatures, yokai, spirits, and monsters stitched from local memory, oral tradition, and written lore." />
+    <meta property="og:image" content="https://localore.app/og-image.jpg" />
+    <meta property="og:site_name" content="LocaLore" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LocaLore — Global Folklore &amp; Creature Atlas" />
+    <meta name="twitter:description" content="A living bestiary of folklore creatures, yokai, spirits, and monsters stitched from local memory, oral tradition, and written lore." />
+    <meta name="twitter:image" content="https://localore.app/og-image.jpg" />
+
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#050507" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=IM+Fell+English:ital@0;1&family=Inter:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "LocaLore",
+      "url": "https://localore.app",
+      "description": "A living bestiary and interactive map of folklore creatures, yokai, spirits, and local legends.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://localore.app/library?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -1,12 +1,13 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { MapContainer as RLMapContainer, Marker, TileLayer as RLTileLayer, useMapEvents } from 'react-leaflet'
+import { Scroll, MapPin, ImagePlus, AlertTriangle, LogIn } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../components/AuthProvider'
 import type { CreatureType } from '../types/creature'
 
-const JAPAN_CENTER: [number, number] = [36.2, 138.2]
+const WORLD_CENTER: [number, number] = [25, 20]
 
 function LocationPicker({
   value,
@@ -21,7 +22,6 @@ function LocationPicker({
       onChange({ lat: e.latlng.lat, lng: e.latlng.lng })
     },
   })
-
   return value ? <Marker position={[value.lat, value.lng]} /> : null
 }
 
@@ -34,6 +34,9 @@ const typeOptions: { value: CreatureType; label: string }[] = [
   { value: 'undead', label: 'Undead' },
   { value: 'other', label: 'Other' },
 ]
+
+const LABEL = 'mb-1.5 block font-ui text-[11px] uppercase tracking-[0.2em] text-parchment-muted'
+const TA = 'input-forge resize-none'
 
 function SubmitCreaturePage() {
   const { user, loading } = useAuth()
@@ -110,195 +113,143 @@ function SubmitCreaturePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-sm text-slate-300">
-        Checking your credentials with the archive...
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="font-heading text-xs uppercase tracking-[0.3em] text-parchment-muted animate-flicker">
+          Checking your credentials with the archive...
+        </p>
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="mx-auto max-w-md px-4 py-8 text-sm text-slate-200">
-        <h1 className="font-gothic text-2xl font-semibold text-amber-400">
-          Only sworn witnesses may file.
-        </h1>
-        <p className="mt-2 text-xs text-slate-400">
-          You need to be signed in to submit a new creature. This helps us trace and
-          protect the archive.
-        </p>
-        <button
-          type="button"
-          className="mt-4 rounded-lg border border-amber-500 bg-amber-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20"
-          onClick={() => navigate('/auth')}
-        >
-          Go to sign in
-        </button>
+      <div className="flex min-h-[60vh] items-center justify-center px-4 animate-rise">
+        <div className="w-full max-w-md rounded-2xl border border-app-border bg-app-surface p-8 text-center shadow-void-deep">
+          <Scroll className="mx-auto mb-4 h-8 w-8 text-gold/60" />
+          <h1 className="font-heading text-xl text-gold">Only sworn witnesses may file.</h1>
+          <p className="mt-2 font-body text-sm text-parchment-muted">
+            You must be signed in to submit a new creature. This protects the integrity of the archive.
+          </p>
+          <Link to="/auth" className="btn-summon mt-5 inline-flex">
+            <LogIn className="h-3.5 w-3.5" />
+            Enter the archive
+          </Link>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-slate-100">
-      <h1 className="font-gothic text-2xl font-semibold text-amber-400">
-        Submit a creature
-      </h1>
-      <p className="mt-1 text-xs text-slate-400">
-        Add a local legend to the living atlas. Entries begin as{' '}
-        <span className="text-amber-300">unverified</span> until cross-checked.
-      </p>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 animate-rise">
 
-      <form onSubmit={handleSubmit} className="mt-5 grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
-        <section className="space-y-3">
-          <div className="grid gap-3 sm:grid-cols-2">
+      {/* Header */}
+      <header className="mb-8">
+        <p className="section-label mb-2 flex items-center gap-1.5">
+          <Scroll className="h-3 w-3" />
+          File a new sighting
+        </p>
+        <h1 className="font-heading text-3xl text-gold">Submit a Creature</h1>
+        <p className="mt-2 font-body text-sm text-parchment-muted max-w-lg leading-relaxed">
+          Add a local legend to the living atlas. Entries begin as{' '}
+          <span className="text-crimson-DEFAULT/80">unverified</span> until cross-checked against primary sources.
+        </p>
+      </header>
+
+      <form
+        onSubmit={handleSubmit}
+        className="grid gap-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]"
+      >
+
+        {/* ── LEFT: text fields ── */}
+        <section className="space-y-4">
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block" htmlFor="name">
-                Name
-              </label>
-              <input
-                id="name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <label className={LABEL} htmlFor="name">Name *</label>
+              <input id="name" required value={name} onChange={(e) => setName(e.target.value)}
+                className="input-forge" placeholder="e.g. Kappa" />
             </div>
             <div>
-              <label className="mb-1 block" htmlFor="alternate">
-                Alternate names
-              </label>
-              <input
-                id="alternate"
-                placeholder="Comma-separated"
-                value={alternateNames}
-                onChange={(e) => setAlternateNames(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <label className={LABEL} htmlFor="alternate">Alternate names</label>
+              <input id="alternate" value={alternateNames} onChange={(e) => setAlternateNames(e.target.value)}
+                className="input-forge" placeholder="Comma-separated" />
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block" htmlFor="region">
-                Region
-              </label>
-              <input
-                id="region"
-                required
-                placeholder="e.g. Kansai"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <label className={LABEL} htmlFor="region">Region *</label>
+              <input id="region" required value={region} onChange={(e) => setRegion(e.target.value)}
+                className="input-forge" placeholder="e.g. Kansai" />
             </div>
             <div>
-              <label className="mb-1 block" htmlFor="country">
-                Country
-              </label>
-              <input
-                id="country"
-                required
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <label className={LABEL} htmlFor="country">Country *</label>
+              <input id="country" required value={country} onChange={(e) => setCountry(e.target.value)}
+                className="input-forge" />
             </div>
             <div>
-              <label className="mb-1 block" htmlFor="locality">
-                Specific locality
-              </label>
-              <input
-                id="locality"
-                placeholder="e.g. Howrah, West Bengal"
-                value={locality}
-                onChange={(e) => setLocality(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              />
+              <label className={LABEL} htmlFor="locality">Locality</label>
+              <input id="locality" value={locality} onChange={(e) => setLocality(e.target.value)}
+                className="input-forge" placeholder="Town, landmark..." />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block" htmlFor="type">
-              Creature type
-            </label>
-            <select
-              id="type"
-              value={creatureType}
+            <label className={LABEL} htmlFor="type">Creature type</label>
+            <select id="type" value={creatureType}
               onChange={(e) => setCreatureType(e.target.value as CreatureType)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              className="input-forge"
             >
               {typeOptions.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
+                <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block" htmlFor="description">
-              Description
-            </label>
-            <textarea
-              id="description"
-              required
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
+            <label className={LABEL} htmlFor="description">Description *</label>
+            <textarea id="description" required rows={3} value={description}
+              onChange={(e) => setDescription(e.target.value)} className={TA}
+              placeholder="What does it look like? Where is it found?" />
           </div>
+
           <div>
-            <label className="mb-1 block" htmlFor="origin">
-              Origin story
-            </label>
-            <textarea
-              id="origin"
-              rows={3}
-              value={originStory}
-              onChange={(e) => setOriginStory(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
+            <label className={LABEL} htmlFor="origin">Origin story</label>
+            <textarea id="origin" rows={3} value={originStory}
+              onChange={(e) => setOriginStory(e.target.value)} className={TA}
+              placeholder="Where did it come from? Why does it haunt this place?" />
           </div>
-          <div>
-            <label className="mb-1 block" htmlFor="abilities">
-              Abilities / powers
-            </label>
-            <textarea
-              id="abilities"
-              rows={2}
-              value={abilities}
-              onChange={(e) => setAbilities(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block" htmlFor="survival">
-              How to survive an encounter
-            </label>
-            <textarea
-              id="survival"
-              rows={2}
-              value={survivalTips}
-              onChange={(e) => setSurvivalTips(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL} htmlFor="abilities">Abilities / powers</label>
+              <textarea id="abilities" rows={3} value={abilities}
+                onChange={(e) => setAbilities(e.target.value)} className={TA}
+                placeholder="What makes it dangerous?" />
+            </div>
+            <div>
+              <label className={LABEL} htmlFor="survival">How to survive</label>
+              <textarea id="survival" rows={3} value={survivalTips}
+                onChange={(e) => setSurvivalTips(e.target.value)} className={TA}
+                placeholder="Wards, offerings, escape routes..." />
+            </div>
           </div>
         </section>
 
-        <aside className="space-y-3">
+        {/* ── RIGHT: map + image + submit ── */}
+        <aside className="space-y-5 flex flex-col">
+
+          {/* Location picker */}
           <div>
-            <label className="mb-1 block">Location picker</label>
-            <p className="mb-2 text-[11px] text-slate-400">
-              Click on the map to drop a pin near where this creature is most often
-              encountered.
+            <label className={`${LABEL} flex items-center gap-1.5`}>
+              <MapPin className="h-3 w-3" />
+              Pin location
+            </label>
+            <p className="mb-2 font-ui text-[11px] text-parchment-dim">
+              Click the map to mark where this creature is most often encountered.
             </p>
-            <div className="overflow-hidden rounded-xl border border-slate-800">
-              <Map
-                center={JAPAN_CENTER}
-                zoom={4}
-                className="h-52 w-full"
-                zoomControl={false}
-              >
+            <div className="overflow-hidden rounded-xl border border-app-border">
+              <Map center={WORLD_CENTER} zoom={2} className="h-52 w-full" zoomControl={false}>
                 <DarkTile
                   attribution='&copy; <a href="https://carto.com/">CARTO</a>'
                   url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -307,39 +258,58 @@ function SubmitCreaturePage() {
               </Map>
             </div>
             {location && (
-              <p className="mt-1 text-[11px] text-slate-400">
+              <p className="mt-1.5 font-ui text-[11px] text-parchment-muted">
                 Pinned at{' '}
-                <span className="font-mono">
+                <span className="font-mono text-gold/70">
                   {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                 </span>
               </p>
             )}
           </div>
 
+          {/* Image upload */}
           <div>
-            <label className="mb-1 block" htmlFor="image">
+            <label className={`${LABEL} flex items-center gap-1.5`} htmlFor="image">
+              <ImagePlus className="h-3 w-3" />
               Image upload
             </label>
-            <input
-              id="image"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="block w-full text-[11px] text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-slate-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-100 hover:file:bg-slate-700"
-            />
-            <p className="mt-1 text-[11px] text-slate-500">
-              Avoid faces of real people. Artwork, sketches, or symbolic photos are ideal.
-            </p>
+            <label
+              htmlFor="image"
+              className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-app-border bg-app-surface px-4 py-6 text-center transition hover:border-gold/40"
+            >
+              <ImagePlus className="h-5 w-5 text-parchment-dim" />
+              <span className="font-ui text-xs text-parchment-muted">
+                {file ? file.name : 'Click to upload an image'}
+              </span>
+              <span className="font-ui text-[10px] text-parchment-dim">
+                PNG, JPG, WEBP — artwork or symbolic depictions preferred
+              </span>
+              <input
+                id="image"
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
           </div>
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {/* Error */}
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg border border-crimson/40 bg-crimson-dark/20 px-3 py-2.5">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-crimson-DEFAULT/80" />
+              <p className="font-ui text-xs text-crimson-DEFAULT/90">{error}</p>
+            </div>
+          )}
 
+          {/* Submit */}
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 w-full rounded-lg border border-amber-500 bg-amber-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
+            className="btn-summon w-full disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
           >
-            {submitting ? 'Submitting to the archive...' : 'Submit creature'}
+            <Scroll className="h-3.5 w-3.5" />
+            {submitting ? 'Filing with the archive...' : 'Submit creature'}
           </button>
         </aside>
       </form>
