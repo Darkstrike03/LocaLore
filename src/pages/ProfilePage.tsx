@@ -7,6 +7,7 @@ import { Eye, Save } from 'lucide-react'
 function ProfilePage() {
   const { user } = useAuth()
   const [profile, setProfile] = useState<any>(null)
+  const [editMode, setEditMode] = useState(false)
 
   // form fields
   const [username, setUsername] = useState('')
@@ -57,6 +58,13 @@ function ProfilePage() {
     } finally {
       setUploading(false)
     }
+  }
+
+  function resetForm() {
+    setUsername(profile?.username ?? '')
+    setDisplayName(profile?.display_name ?? '')
+    setAvatarUrl(profile?.avatar_url ?? null)
+    setBio(profile?.bio ?? '')
   }
 
   async function handleSubmit(e?: any) {
@@ -110,6 +118,7 @@ function ProfilePage() {
         .upsert({ id: user.id, ...payload }, { onConflict: 'id' })
       if (error) throw error
       setProfile((p:any) => ({ ...(p||{}), ...payload }))
+      setEditMode(false)
       alert('Profile saved')
     } catch (err) {
       console.error(err)
@@ -124,58 +133,83 @@ function ProfilePage() {
         <p className="font-ui text-sm text-parchment-muted mb-6">Manage your public profile.</p>
 
         <div className="rounded-2xl border border-app-border bg-app-surface p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-lg overflow-hidden bg-void/20 flex items-center justify-center border border-app-border">
-                {avatarUrl ? (
-                  // eslint-disable-next-line jsx-a11y/img-redundant-alt
-                  <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+          {!editMode ? (
+            <div className="flex flex-col md:flex-row md:items-center md:gap-6">
+              <div className="h-24 w-24 rounded-lg overflow-hidden bg-void/20 flex items-center justify-center border border-app-border">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.display_name || profile.username} className="h-full w-full object-cover" />
                 ) : (
-                  <Eye className="h-8 w-8 text-parchment-dim" />
+                  <Eye className="h-10 w-10 text-parchment-dim" />
                 )}
               </div>
-              <div>
-                <label className="font-ui text-xs text-parchment-muted">Avatar</label>
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(ev) => handleAvatarFile(ev.target.files?.[0])}
-                  />
-                  {uploading && <span className="text-xs text-parchment-muted">Uploading…</span>}
+              <div className="flex-1 mt-4 md:mt-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-heading text-xl text-gold">{profile?.display_name || profile?.username}</h2>
+                    <p className="text-parchment-muted">@{profile?.username}</p>
+                  </div>
+                  <div>
+                    <button onClick={() => setEditMode(true)} className="btn-summon">Edit profile</button>
+                  </div>
                 </div>
+                <p className="mt-4 text-parchment-dim">{profile?.bio}</p>
               </div>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-lg overflow-hidden bg-void/20 flex items-center justify-center border border-app-border">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line jsx-a11y/img-redundant-alt
+                    <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <Eye className="h-8 w-8 text-parchment-dim" />
+                  )}
+                </div>
+                <div>
+                  <label className="font-ui text-xs text-parchment-muted">Avatar</label>
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(ev) => handleAvatarFile(ev.target.files?.[0])}
+                    />
+                    {uploading && <span className="text-xs text-parchment-muted">Uploading…</span>}
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <label className="font-ui text-xs text-parchment-muted">Username</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="unique-handle"
-                className="input-forge mt-1 w-full"
-                disabled={!!profile?.username}
-              />
-              {profile?.username && <p className="mt-1 text-xs text-parchment-dim">Username is locked once set.</p>}
-            </div>
+              <div>
+                <label className="font-ui text-xs text-parchment-muted">Username</label>
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="unique-handle"
+                  className="input-forge mt-1 w-full"
+                  disabled={!!profile?.username}
+                />
+                {profile?.username && <p className="mt-1 text-xs text-parchment-dim">Username is locked once set.</p>}
+              </div>
 
-            <div>
-              <label className="font-ui text-xs text-parchment-muted">Display name</label>
-              <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="input-forge mt-1 w-full" />
-            </div>
+              <div>
+                <label className="font-ui text-xs text-parchment-muted">Display name</label>
+                <input value={displayName} onChange={(e)=>setDisplayName(e.target.value)} className="input-forge mt-1 w-full" />
+              </div>
 
-            <div>
-              <label className="font-ui text-xs text-parchment-muted">Bio</label>
-              <textarea value={bio} onChange={(e)=>setBio(e.target.value)} className="input-forge mt-1 w-full h-28" />
-            </div>
+              <div>
+                <label className="font-ui text-xs text-parchment-muted">Bio</label>
+                <textarea value={bio} onChange={(e)=>setBio(e.target.value)} className="input-forge mt-1 w-full h-28" />
+              </div>
 
-            <div className="flex items-center justify-end gap-2">
-              <button type="submit" className="btn-summon flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Save profile
-              </button>
-            </div>
-          </form>
+              <div className="flex items-center justify-end gap-2">
+                <button type="button" onClick={() => { resetForm(); setEditMode(false) }} className="btn-ghost">Cancel</button>
+                <button type="submit" className="btn-summon flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save profile
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
       {/* If profile missing, open modal-like blocking UI */}
