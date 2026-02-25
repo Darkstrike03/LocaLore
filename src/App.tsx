@@ -1,5 +1,5 @@
 import { Route, Routes, NavLink } from 'react-router-dom'
-import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu } from 'lucide-react'
+import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import HomePage from './pages/HomePage'
 import LibraryPage from './pages/LibraryPage'
@@ -7,6 +7,8 @@ import CreatureProfilePage from './pages/CreatureProfilePage'
 import SubmitCreaturePage from './pages/SubmitCreaturePage'
 import AboutPage from './pages/AboutPage'
 import ModerationPage from './pages/ModerationPage'
+import ProfilePage from './pages/ProfilePage'
+import PublicProfilePage from './pages/PublicProfilePage'
 import AuthModal from './components/AuthModal'
 import { useAuth } from './context/AuthContext'
 import { useState, useEffect } from 'react'
@@ -90,9 +92,13 @@ function App() {
             {/* Auth control */}
             {user ? (
               <div className="ml-2 flex items-center gap-2">
-                <span className="max-w-[140px] truncate rounded-lg border border-gold/25 bg-gold/10 px-3 py-2 text-[11px] font-ui text-gold">
-                  {user.email}
-                </span>
+                <NavLink to="/profile" className="flex items-center gap-2 rounded-lg px-2 py-1 text-sm border border-app-border bg-app-surface">
+                  <div className="-space-x-1 flex items-center">
+                    <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-gold"><Eye className="h-3.5 w-3.5" /></span>
+                    <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-crimson"><Skull className="h-3.5 w-3.5" /></span>
+                    <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-parchment-muted"><MapPin className="h-3.5 w-3.5" /></span>
+                  </div>
+                </NavLink>
                 <button
                   type="button"
                   onClick={() => void signOut()}
@@ -151,9 +157,18 @@ function App() {
 
               {user ? (
                 <>
-                  <div className="mt-2 rounded-lg border border-gold/25 bg-gold/10 px-3 py-3 text-sm font-ui text-gold truncate">
-                    {user.email}
-                  </div>
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="mt-2 flex items-center gap-3 rounded-lg border border-app-border px-3 py-3 text-sm font-ui uppercase tracking-[0.2em] text-parchment-muted transition hover:border-gold/40 hover:text-gold"
+                  >
+                    <div className="-space-x-1 flex items-center">
+                      <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-gold"><Eye className="h-3.5 w-3.5" /></span>
+                      <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-crimson"><Skull className="h-3.5 w-3.5" /></span>
+                      <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-parchment-muted"><MapPin className="h-3.5 w-3.5" /></span>
+                    </div>
+                    Profile
+                  </NavLink>
                   <button
                     type="button"
                     onClick={() => { void signOut(); setMobileNavOpen(false) }}
@@ -185,6 +200,8 @@ function App() {
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/creatures/:slug" element={<CreatureProfilePage />} />
           <Route path="/submit" element={<SubmitCreaturePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/:username" element={<PublicProfilePage />} />
           <Route path="/moderate" element={<ModerationPage />} />
           <Route path="/about" element={<AboutPage />} />
         </Routes>
