@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { MapContainer as RLMapContainer, Marker as RLMarker, Popup, TileLayer as RLTileLayer } from 'react-leaflet'
+import MapLibreMap from '../components/MapLibreMap'
+import MapControls from '../components/MapControls'
+import MapLegend from '../components/MapLegend'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
 import { Eye, MapPin, Skull, ShieldAlert, Sword, BookMarked, ChevronRight } from 'lucide-react'
@@ -90,6 +93,8 @@ function HomePage() {
   const DarkTile: any = RLTileLayer
   const RMarker: any = RLMarker
 
+  const [mapMode, setMapMode] = useState<'dark' | 'satellite' | 'vector'>('dark')
+
   const handleSelect = (c: Creature) => {
     setSelected(c)
     setSidebarVisible(true)
@@ -100,18 +105,31 @@ function HomePage() {
 
       {/* ── MAP ── */}
       <div className="relative flex-1 min-h-[55vh] md:min-h-0 z-0">
-        <Map
-          center={WORLD_CENTER}
-          zoom={3}
-          minZoom={2}
-          className="h-full w-full"
-          zoomControl={false}
-          attributionControl={false}
-        >
-          <DarkTile
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        <MapControls mapMode={mapMode} setMapMode={setMapMode} />
+
+        {mapMode === 'vector' ? (
+          <MapLibreMap
+            center={WORLD_CENTER}
+            zoom={3}
+            markers={creatures
+              .filter((c) => c.latitude != null && c.longitude != null)
+              .map((c) => ({ id: c.id, lat: c.latitude as number, lng: c.longitude as number, title: c.name, description: `${c.region} · ${c.country}` }))}
           />
+        ) : (
+          <Map
+            center={WORLD_CENTER}
+            zoom={3}
+            minZoom={2}
+            className="h-full w-full"
+            zoomControl={false}
+            attributionControl={false}
+          >
+            <DarkTile
+              attribution={mapMode === 'dark' ? '&copy; <a href="https://carto.com/">CARTO</a>' : 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'}
+              url={mapMode === 'dark'
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'}
+            />
           {mapLoading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-void/80 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-3">
@@ -152,22 +170,13 @@ function HomePage() {
             </RMarker>
           ))}
         </Map>
+        )}
 
         {/* Map UI overlays */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-void/60 to-transparent" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-void/40 to-transparent" />
 
-        {/* Map legend */}
-        <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 rounded-xl border border-app-border bg-void/90 backdrop-blur-xl px-3 py-2.5 text-[10px] font-ui">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full border border-gold bg-app-surface" />
-            <span className="text-parchment-muted uppercase tracking-wider">Verified</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full border border-crimson bg-app-surface" />
-            <span className="text-parchment-muted uppercase tracking-wider">Unverified</span>
-          </div>
-        </div>
+        <MapLegend />
 
         {/* Mobile: open sidebar button */}
         {selected && !sidebarVisible && (

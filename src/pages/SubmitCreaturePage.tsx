@@ -66,6 +66,7 @@ function SubmitCreaturePage() {
 
   const Map: any = RLMapContainer
   const DarkTile: any = RLTileLayer
+  const [mapMode, setMapMode] = useState<'dark' | 'satellite'>('dark')
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0] ?? null
@@ -304,11 +305,29 @@ function SubmitCreaturePage() {
             <p className="mb-2 font-ui text-[11px] text-parchment-dim">
               Click the map to mark where this creature is most often encountered.
             </p>
-            <div className="overflow-hidden rounded-xl border border-app-border">
+            <div className="overflow-hidden rounded-xl border border-app-border relative">
+              <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-void/90 border border-app-border px-2 py-1 text-[12px]">
+                <button
+                  type="button"
+                  className={`px-2 py-1 rounded ${mapMode === 'dark' ? 'bg-void/60 text-gold' : 'text-parchment-muted'}`}
+                  onClick={() => setMapMode('dark')}
+                >
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  className={`px-2 py-1 rounded ${mapMode === 'satellite' ? 'bg-void/60 text-gold' : 'text-parchment-muted'}`}
+                  onClick={() => setMapMode('satellite')}
+                >
+                  Satellite
+                </button>
+              </div>
               <Map center={WORLD_CENTER} zoom={2} className="h-52 w-full" zoomControl={false}>
                 <DarkTile
-                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                  attribution={mapMode === 'dark' ? '&copy; <a href="https://carto.com/">CARTO</a>' : 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'}
+                  url={mapMode === 'dark'
+                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                    : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'}
                 />
                 <LocationPicker value={location} onChange={setLocation} />
               </Map>
