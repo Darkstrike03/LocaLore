@@ -3,6 +3,7 @@ import type { Creature } from '../types/creature'
 export const mockCreatures: Creature[] = [
   {
     id: 'kappa-1',
+    slug: 'kappa',
     name: 'Kappa',
     alternate_names: ['Gatarō'],
     region: 'Tohoku',
@@ -28,6 +29,7 @@ export const mockCreatures: Creature[] = [
   },
   {
     id: 'tengu-1',
+    slug: 'tengu',
     name: 'Tengu',
     alternate_names: [],
     region: 'Kansai',
@@ -53,6 +55,7 @@ export const mockCreatures: Creature[] = [
   },
   {
     id: 'kitsune-1',
+    slug: 'kitsune',
     name: 'Kitsune',
     alternate_names: [],
     region: 'Kanto',

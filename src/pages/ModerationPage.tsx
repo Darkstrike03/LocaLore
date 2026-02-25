@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { CheckCircle2, XCircle, Eye, MapPin, Skull, Loader2 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { slugify } from '../lib/slugify'
 import type { Submission } from '../types/creature'
 
 function ModerationPage() {
@@ -37,6 +38,7 @@ function ModerationPage() {
       const { data: creatureData, error: creatureError } = await supabase
         .from('creatures')
         .insert({
+          slug: submission.slug || slugify(submission.name),
           name: submission.name,
           alternate_names: submission.alternate_names,
           region: submission.region,

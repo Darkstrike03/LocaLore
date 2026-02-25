@@ -5,22 +5,22 @@ import type { Creature } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
 
 function CreatureProfilePage() {
-  const { id } = useParams<{ id: string }>()
+  const { slug } = useParams<{ slug: string }>()
   const [creature, setCreature] = useState<Creature | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!id) { setLoading(false); return }
+    if (!slug) { setLoading(false); return }
     supabase
       .from('creatures')
       .select('*')
-      .eq('id', id)
+      .eq('slug', slug)
       .single()
       .then(({ data, error }) => {
         if (!error && data) setCreature(data as Creature)
         setLoading(false)
       })
-  }, [id])
+  }, [slug])
 
   if (loading) {
     return (

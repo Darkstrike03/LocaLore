@@ -183,7 +183,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/library" element={<LibraryPage />} />
-          <Route path="/creatures/:id" element={<CreatureProfilePage />} />
+          <Route path="/creatures/:slug" element={<CreatureProfilePage />} />
           <Route path="/submit" element={<SubmitCreaturePage />} />
           <Route path="/moderate" element={<ModerationPage />} />
           <Route path="/about" element={<AboutPage />} />

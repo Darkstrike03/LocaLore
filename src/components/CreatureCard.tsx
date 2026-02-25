@@ -9,7 +9,7 @@ interface Props {
 export function CreatureCard({ creature }: Props) {
   return (
     <Link
-      to={`/creatures/${encodeURIComponent(creature.id)}`}
+      to={`/creatures/${creature.slug}`}
       className="group relative flex flex-col overflow-hidden rounded-xl border border-app-border bg-card-surface shadow-void-deep
                  transition-all duration-300
                  hover:-translate-y-1.5 hover:border-gold/40 hover:shadow-gold-glow"

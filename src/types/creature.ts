@@ -14,6 +14,7 @@ export type SubmissionStatus = 'pending' | 'approved' | 'rejected'
 /** Row shape for the `creatures` table (curated / approved entries) */
 export interface Creature {
   id: string
+  slug: string
   name: string
   alternate_names: string[]
   region: string | null
@@ -38,6 +39,7 @@ export interface Creature {
 export interface Submission {
   id: string
   submitted_by: string
+  slug: string | null
   name: string
   alternate_names: string[]
   region: string | null
@@ -62,6 +64,7 @@ export interface Submission {
 /** Insert payload for the `submissions` table */
 export type SubmissionInsert = {
   submitted_by: string
+  slug?: string
   name: string
   alternate_names?: string[]
   region?: string | null

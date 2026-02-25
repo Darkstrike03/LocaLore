@@ -273,7 +273,7 @@ function HomePage() {
 
               {/* Link to full profile */}
               <Link
-                to={`/creatures/${encodeURIComponent(selected.id)}`}
+                to={`/creatures/${selected.slug}`}
                 className="btn-summon mt-2 w-full justify-center"
               >
                 Full Archive Entry

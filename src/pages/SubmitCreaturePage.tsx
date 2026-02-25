@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { uploadImage } from '../lib/imgbb'
+import { slugify } from '../lib/slugify'
 import { useAuth } from '../context/AuthContext'
 import type { CreatureType } from '../types/creature'
 
@@ -97,6 +98,7 @@ function SubmitCreaturePage() {
 
       const { error: insertError } = await supabase.from('submissions').insert({
         submitted_by:   user.id,
+        slug:           slugify(name.trim()),
         name:           name.trim(),
         alternate_names: alternateNames
           ? alternateNames.split(',').map((s) => s.trim()).filter(Boolean)
