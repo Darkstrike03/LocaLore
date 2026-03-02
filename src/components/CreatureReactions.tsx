@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react'
+import { Eye, Snowflake, HelpCircle, AlertTriangle, Sword, Flame, Sparkles, Ghost, Crosshair } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { ReactionType } from '../types/creature'
 
-const REACTIONS: { key: ReactionType; emoji: string; label: string }[] = [
-  { key: 'seen',      emoji: '👁',  label: "I've seen this" },
-  { key: 'chilling',  emoji: '🥶',  label: 'Chilling'       },
-  { key: 'disbelief', emoji: '😶',  label: 'Disbelief'      },
-  { key: 'terrified', emoji: '😱',  label: 'Terrified'      },
-  { key: 'survived',  emoji: '⚔️',  label: 'I survived'     },
-  { key: 'cursed',    emoji: '🔥',  label: 'Cursed'         },
-  { key: 'revered',   emoji: '🙏',  label: 'Revered'        },
-  { key: 'haunted',   emoji: '🫣',  label: 'Haunted me'     },
-  { key: 'hunting',   emoji: '🗡️', label: 'Hunting one'    },
+interface ReactionDef {
+  key: ReactionType
+  Icon: LucideIcon
+  label: string
+  color: string        // tailwind text + border + bg classes when active
+}
+
+const REACTIONS: ReactionDef[] = [
+  { key: 'seen',      Icon: Eye,           label: "I've seen this", color: 'border-gold/50 bg-gold/10 text-gold'           },
+  { key: 'chilling',  Icon: Snowflake,     label: 'Chilling',       color: 'border-sky-400/50 bg-sky-400/10 text-sky-300'  },
+  { key: 'disbelief', Icon: HelpCircle,    label: 'Disbelief',      color: 'border-zinc-400/40 bg-zinc-400/10 text-zinc-300'},
+  { key: 'terrified', Icon: AlertTriangle, label: 'Terrified',      color: 'border-orange-400/50 bg-orange-400/10 text-orange-300'},
+  { key: 'survived',  Icon: Sword,         label: 'I survived',     color: 'border-emerald-400/50 bg-emerald-400/10 text-emerald-300'},
+  { key: 'cursed',    Icon: Flame,         label: 'Cursed',         color: 'border-red-400/50 bg-red-400/10 text-red-400'  },
+  { key: 'revered',   Icon: Sparkles,      label: 'Revered',        color: 'border-violet-400/50 bg-violet-400/10 text-violet-300'},
+  { key: 'haunted',   Icon: Ghost,         label: 'Haunted me',     color: 'border-purple-400/50 bg-purple-400/10 text-purple-300'},
+  { key: 'hunting',   Icon: Crosshair,     label: 'Hunting one',    color: 'border-crimson/50 bg-crimson/10 text-crimson'  },
 ]
 
 export default function CreatureReactions({ creatureId }: { creatureId: string }) {
@@ -77,7 +86,7 @@ export default function CreatureReactions({ creatureId }: { creatureId: string }
         Witness reactions
       </h3>
       <div className="flex flex-wrap gap-2">
-        {REACTIONS.map(({ key, emoji, label }) => {
+        {REACTIONS.map(({ key, Icon, label, color }) => {
           const active = myReactions.has(key)
           return (
             <button
@@ -86,16 +95,16 @@ export default function CreatureReactions({ creatureId }: { creatureId: string }
               onClick={() => toggle(key)}
               title={user ? undefined : 'Sign in to react'}
               disabled={!user}
-              className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-ui text-[11px] transition-all duration-200 ${
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-ui text-[11px] transition-all duration-200 ${
                 active
-                  ? 'border-gold/50 bg-gold/10 text-gold'
+                  ? color
                   : 'border-app-border text-parchment-muted hover:border-gold/30 hover:text-parchment disabled:opacity-50 disabled:cursor-not-allowed'
               }`}
             >
-              <span className="text-sm">{emoji}</span>
+              <Icon className="h-3.5 w-3.5 shrink-0" />
               {label}
               {counts[key] > 0 && (
-                <span className={`ml-1 rounded-full px-1.5 py-0 text-[10px] font-mono ${active ? 'bg-gold/20 text-gold' : 'bg-app-border text-parchment-dim'}`}>
+                <span className={`ml-0.5 rounded-full px-1.5 py-0 text-[10px] font-mono ${active ? 'bg-white/15 text-inherit' : 'bg-app-border text-parchment-dim'}`}>
                   {counts[key]}
                 </span>
               )}
