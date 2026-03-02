@@ -1,17 +1,21 @@
+import '@google/model-viewer'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Camera, X, Download, MapPin } from 'lucide-react'
+import { Camera, X, Download, MapPin, Box } from 'lucide-react'
 import { getTypeConfig } from './CreatureTypeIcon'
 import type { CreatureType } from '../types/creature'
 
 interface Props {
   imageUrl: string | null
+  secondaryImageUrl?: string | null  // ← first gallery image; used for AR if present
+  modelUrl?: string | null      // ← optional GLB/GLTF URL
   creatureName: string
   creatureType?: CreatureType
 }
 
-// 'active-xr'    = WebXR immersive-ar session running (hardware AR)
+// 'active-model'  = full-screen model-viewer (3D + built-in AR button)
+// 'active-xr'    = WebXR immersive-ar session running (hardware AR, 2D image)
 // 'active-camera'= Fallback: software camera overlay
-type Phase = 'idle' | 'requesting' | 'active-xr' | 'active-camera' | 'denied'
+type Phase = 'idle' | 'requesting' | 'active-model' | 'active-xr' | 'active-camera' | 'denied'
 
 // ─── 4×4 column-major matrix multiply (WebXR uses Float32Array col-major) ───
 function matMulVec4(m: Float32Array, x: number, y: number, z: number, w: number) {
@@ -35,7 +39,9 @@ function worldToNDC(
   return { x: c.x / c.w, y: c.y / c.w }
 }
 
-export default function ARSummonPreview({ imageUrl, creatureName, creatureType = 'other' }: Props) {
+export default function ARSummonPreview({ imageUrl, secondaryImageUrl, modelUrl, creatureName, creatureType = 'other' }: Props) {
+  // Prefer the secondary (gallery) image for AR; fall back to primary image_url
+  const arImageUrl = secondaryImageUrl ?? imageUrl
   const [phase, setPhase] = useState<Phase>('idle')
 
   // ── Camera-overlay (fallback) refs ────────────────────────────────────────
@@ -65,7 +71,7 @@ export default function ARSummonPreview({ imageUrl, creatureName, creatureType =
   const [flashVisible, setFlashVisible] = useState(false)
 
   const typeConfig = getTypeConfig(creatureType)
-  const hasImage   = !!imageUrl
+  const hasImage   = !!arImageUrl
 
 
   // ── Device orientation parallax (camera-overlay mode only) ────────────────
@@ -83,8 +89,13 @@ export default function ARSummonPreview({ imageUrl, creatureName, creatureType =
 
   // ── Entry point ────────────────────────────────────────────────────────────
   async function start() {
+    // Priority 1: 3D GLB model → model-viewer (handles WebXR + iOS ARKit natively)
+    if (modelUrl) {
+      setPhase('active-model')
+      return
+    }
     setPhase('requesting')
-    // Prefer WebXR immersive-ar (Android ARCore / future iOS)
+    // Priority 2: WebXR immersive-ar (Android ARCore, 2D image on real surface)
     try {
       const xrApi = (navigator as any).xr
       if (xrApi && await xrApi.isSessionSupported('immersive-ar')) {
@@ -92,7 +103,7 @@ export default function ARSummonPreview({ imageUrl, creatureName, creatureType =
         return
       }
     } catch { /* WebXR not available, fall through */ }
-    // Fallback: plain camera overlay
+    // Priority 3: plain camera overlay
     await startCamera()
   }
 
@@ -261,14 +272,73 @@ export default function ARSummonPreview({ imageUrl, creatureName, creatureType =
         onClick={start}
         disabled={phase === 'requesting'}
         className="flex items-center gap-2 rounded-full border border-gold/50 px-3 py-1.5 font-ui text-[11px] text-gold hover:bg-gold/10 transition-all duration-200 disabled:opacity-50"
-        title="Summon creature in AR"
+        title={modelUrl ? 'View 3D model & place in AR' : 'Summon creature in AR'}
       >
-        <Camera className="h-3.5 w-3.5" />
-        {phase === 'requesting' ? 'Requesting…' : 'AR Summon'}
+        {modelUrl ? <Box className="h-3.5 w-3.5" /> : <Camera className="h-3.5 w-3.5" />}
+        {phase === 'requesting' ? 'Requesting…' : modelUrl ? '3D / AR' : 'AR Summon'}
       </button>
 
       {phase === 'denied' && (
         <p className="font-ui text-[10px] text-crimson mt-1">Camera access denied — check browser settings.</p>
+      )}
+
+      {/* ── 3D model-viewer overlay (shown when a GLB is available) ────── */}
+      {phase === 'active-model' && modelUrl && (
+        <div className="fixed inset-0 z-[300] bg-black/95 flex flex-col select-none">
+          {/* HUD top */}
+          <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-b from-black to-transparent shrink-0">
+            <div>
+              <p className="font-ui text-[9px] uppercase tracking-[0.35em] text-gold/80">3D Model · LocaLore</p>
+              <p className="font-heading text-lg text-gold leading-tight">{creatureName}</p>
+              <p className="font-ui text-[9px] text-parchment-dim/60 mt-0.5">
+                Drag to rotate · Pinch to zoom · Tap
+                {' '}
+                <span className="text-gold/70">⬛ AR</span>
+                {' '}
+                to place in your world
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={stopAll}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white hover:bg-black/70 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* model-viewer fills remaining space */}
+          <div className="flex-1 relative">
+            <model-viewer
+              src={modelUrl}
+              alt={creatureName}
+              ar
+              ar-modes="webxr scene-viewer quick-look"
+              ar-scale="auto"
+              camera-controls
+              auto-rotate
+              auto-rotate-delay={2000}
+              shadow-intensity={1}
+              exposure={0.8}
+              style={{
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'transparent',
+              }}
+            />
+          </div>
+
+          {/* size slider — affects the AR placement scale */}
+          <div className="shrink-0 pb-8 pt-3 flex flex-col items-center gap-2 px-8 bg-gradient-to-t from-black to-transparent">
+            <div className="flex w-full max-w-xs items-center gap-3">
+              <span className="w-12 shrink-0 text-right font-ui text-[9px] uppercase tracking-widest text-white/50">Size</span>
+              <input type="range" min={0.3} max={2.2} step={0.05} value={scale}
+                onChange={e => setScale(parseFloat(e.target.value))} className="flex-1 accent-yellow-400 h-1" />
+              <span className="w-8 shrink-0 font-mono text-[9px] text-white/50">{Math.round(scale * 100)}%</span>
+            </div>
+            <p className="font-ui text-[9px] text-white/25">Tap the AR icon (cube) in the bottom-right to enter AR</p>
+          </div>
+        </div>
       )}
 
       {/* ── WebXR DOM-overlay root (always mounted so it exists at session start) */}
@@ -292,7 +362,7 @@ export default function ARSummonPreview({ imageUrl, creatureName, creatureType =
           >
             {hasImage ? (
               <img
-                src={imageUrl!}
+                src={arImageUrl!}
                 alt={creatureName}
                 className="object-contain"
                 style={{
@@ -410,7 +480,7 @@ export default function ARSummonPreview({ imageUrl, creatureName, creatureType =
             {hasImage ? (
               <img
                 ref={overlayImgRef}
-                src={imageUrl!}
+                src={arImageUrl!}
                 alt={creatureName}
                 crossOrigin="anonymous"
                 className="object-contain"

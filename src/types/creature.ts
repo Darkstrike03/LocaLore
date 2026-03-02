@@ -65,6 +65,7 @@ export interface Creature {
   abilities: string | null
   survival_tips: string | null
   image_url: string | null
+  model_url: string | null
   verified: boolean
   danger_rating: number | null
   source: CreatureSource

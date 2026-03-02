@@ -9,9 +9,11 @@ interface Props {
   creatureId: string
   primaryImage: string | null
   creatureName: string
+  /** Called with the first gallery (non-primary) image URL once loaded */
+  onGalleryFirstImage?: (url: string | null) => void
 }
 
-export default function CreatureGallery({ creatureId, primaryImage, creatureName }: Props) {
+export default function CreatureGallery({ creatureId, primaryImage, creatureName, onGalleryFirstImage }: Props) {
   const { user } = useAuth()
   const [images, setImages] = useState<CreatureImage[]>([])
   const [isModerator, setIsModerator] = useState(false)
@@ -34,7 +36,11 @@ export default function CreatureGallery({ creatureId, primaryImage, creatureName
         .select('*')
         .eq('creature_id', creatureId)
         .order('created_at', { ascending: true })
-      if (mounted) setImages((data as CreatureImage[]) || [])
+      if (mounted) {
+        const imgs = (data as CreatureImage[]) || []
+        setImages(imgs)
+        onGalleryFirstImage?.(imgs[0]?.url ?? null)
+      }
 
       if (user) {
         const { data: me } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()

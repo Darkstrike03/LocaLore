@@ -21,6 +21,7 @@ export const mockCreatures: Creature[] = [
     survival_tips:
       'Bow deeply to it; a polite Kappa will return the bow, spilling the water from its head and losing its strength. Offer cucumbers engraved with your name to appease it.',
     image_url: null,
+    model_url: null,
     verified: true,
     danger_rating: null,
     source: 'ai_collected',
@@ -48,6 +49,7 @@ export const mockCreatures: Creature[] = [
     survival_tips:
       'Show humility and respect when traveling in the mountains. Avoid boasting or desecrating shrines. Offer a short prayer at mountain temples before passing through.',
     image_url: null,
+    model_url: null,
     verified: true,
     danger_rating: null,
     source: 'ai_collected',
@@ -75,6 +77,7 @@ export const mockCreatures: Creature[] = [
     survival_tips:
       'Question uncanny coincidences and too-perfect encounters. Look for subtle fox traits—shadows, tails, or reflections that betray the disguise.',
     image_url: null,
+    model_url: null,
     verified: false,
     danger_rating: null,
     source: 'ai_collected',

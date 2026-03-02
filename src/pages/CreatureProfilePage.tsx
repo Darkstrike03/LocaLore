@@ -22,6 +22,9 @@ function CreatureProfilePage() {
   const { user } = useAuth()
   const [isModerator, setIsModerator] = useState(false)
   const [savingDanger, setSavingDanger] = useState(false)
+  const [modelInput, setModelInput] = useState('')
+  const [savingModel, setSavingModel] = useState(false)
+  const [galleryFirstImage, setGalleryFirstImage] = useState<string | null>(null)
 
   // Dynamic SEO
   useSEO({
@@ -173,6 +176,49 @@ function CreatureProfilePage() {
           {isModerator && <span className="font-ui text-[10px] text-parchment-dim">(click skull to set danger)</span>}
         </div>
 
+        {/* Moderator: 3D model URL */}
+        {isModerator && (
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="url"
+              placeholder="GLB model URL (optional) — e.g. https://…/creature.glb"
+              value={modelInput || creature.model_url || ''}
+              onChange={e => setModelInput(e.target.value)}
+              className="input-forge flex-1 text-[11px] font-ui"
+            />
+            <button
+              type="button"
+              disabled={savingModel}
+              onClick={async () => {
+                setSavingModel(true)
+                const url = modelInput.trim() || null
+                const { error } = await supabase
+                  .from('creatures')
+                  .update({ model_url: url })
+                  .eq('id', creature.id)
+                if (!error) setCreature({ ...creature, model_url: url })
+                setSavingModel(false)
+                setModelInput('')
+              }}
+              className="btn-ghost text-[11px] whitespace-nowrap disabled:opacity-50"
+            >
+              {savingModel ? 'Saving…' : 'Save 3D'}
+            </button>
+            {creature.model_url && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.from('creatures').update({ model_url: null }).eq('id', creature.id)
+                  setCreature({ ...creature, model_url: null })
+                }}
+                className="btn-ghost text-[11px] text-crimson"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Actions row */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <BookmarkButton creatureId={creature.id} />
@@ -182,7 +228,13 @@ function CreatureProfilePage() {
             description={creature.description?.slice(0, 120) + '…'}
             url={window.location.href}
           />
-          <ARSummonPreview imageUrl={creature.image_url} creatureName={creature.name} creatureType={creature.creature_type} />
+          <ARSummonPreview
+            imageUrl={creature.image_url}
+            secondaryImageUrl={galleryFirstImage}
+            modelUrl={creature.model_url}
+            creatureName={creature.name}
+            creatureType={creature.creature_type}
+          />
         </div>
       </header>
 
@@ -218,6 +270,7 @@ function CreatureProfilePage() {
             creatureId={creature.id}
             primaryImage={creature.image_url}
             creatureName={creature.name}
+            onGalleryFirstImage={setGalleryFirstImage}
           />
 
           {/* Archive datestamp card */}
