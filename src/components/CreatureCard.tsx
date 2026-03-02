@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Eye } from 'lucide-react'
 import type { Creature } from '../types/creature'
+import CreatureTypeIcon from './CreatureTypeIcon'
+import DangerGauge from './DangerGauge'
 
 interface Props {
   creature: Creature
@@ -25,12 +26,7 @@ export function CreatureCard({ creature }: Props) {
             className="h-full w-full object-cover opacity-70 transition-all duration-500 group-hover:opacity-90 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-            <Eye className="h-6 w-6 text-parchment-dim/40" />
-            <span className="font-ui text-[9px] uppercase tracking-[0.4em] text-parchment-dim/30">
-              No trace captured
-            </span>
-          </div>
+          <CreatureTypeIcon type={creature.creature_type} size="h-10 w-10" />
         )}
 
         {/* Type badge */}
@@ -67,6 +63,13 @@ export function CreatureCard({ creature }: Props) {
         <p className="mt-1 font-body text-[13px] leading-relaxed text-parchment/70 line-clamp-3">
           {creature.description}
         </p>
+
+        {/* Danger gauge (read-only) */}
+        {creature.danger_rating && (
+          <div className="mt-1">
+            <DangerGauge level={creature.danger_rating} />
+          </div>
+        )}
 
         {/* Read more hint */}
         <div className="mt-auto flex items-center gap-1 pt-2 font-ui text-[10px] uppercase tracking-[0.2em] text-parchment-dim group-hover:text-gold/60 transition-colors">

@@ -1,13 +1,17 @@
 import { Route, Routes, NavLink } from 'react-router-dom'
-import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull } from 'lucide-react'
+import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import HomePage from './pages/HomePage'
 import LibraryPage from './pages/LibraryPage'
 import CreatureProfilePage from './pages/CreatureProfilePage'
 import SubmitCreaturePage from './pages/SubmitCreaturePage'
 import AboutPage from './pages/AboutPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsPage from './pages/TermsPage'
+import ContactPage from './pages/ContactPage'
 import ModerationPage from './pages/ModerationPage'
 import ProfilePage from './pages/ProfilePage'
+import GrimoirePage from './pages/GrimoirePage'
 import PublicProfilePage from './pages/PublicProfilePage'
 import AuthModal from './components/AuthModal'
 import { useAuth } from './context/AuthContext'
@@ -16,6 +20,7 @@ import { useState, useEffect } from 'react'
 const navItems = [
   { to: '/', icon: MapPin, label: 'Map' },
   { to: '/library', icon: BookOpen, label: 'Library' },
+  { to: '/grimoire', icon: BookMarked, label: 'Grimoire' },
   { to: '/submit', icon: Scroll, label: 'Submit' },
   { to: '/about', icon: Info, label: 'About' },
 ]
@@ -203,7 +208,11 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/:username" element={<PublicProfilePage />} />
           <Route path="/moderate" element={<ModerationPage />} />
+          <Route path="/grimoire" element={<GrimoirePage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Routes>
       </main>
 
@@ -215,6 +224,12 @@ function App() {
         <p className="mt-1 font-ui text-[10px] text-parchment-muted/50">
           All entries are fragments of collective memory. Tread carefully.
         </p>
+        <nav className="mt-3 flex items-center justify-center gap-4">
+          <a href="/about" className="text-parchment-muted hover:text-parchment">About</a>
+          <a href="/privacy" className="text-parchment-muted hover:text-parchment">Privacy</a>
+          <a href="/terms" className="text-parchment-muted hover:text-parchment">Terms</a>
+          <a href="/contact" className="text-parchment-muted hover:text-parchment">Contact</a>
+        </nav>
       </footer>
     </div>
   )

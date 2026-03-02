@@ -1,10 +1,19 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Eye, BookMarked, Sword, ShieldAlert, Skull, Calendar, Tag, AlertTriangle, ImagePlus } from 'lucide-react'
+import { ArrowLeft, Eye, BookMarked, Sword, ShieldAlert, Skull, Calendar, Tag, AlertTriangle } from 'lucide-react'
 import type { Creature } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
-import { uploadImage } from '../lib/imgbb'
+import { useSEO } from '../hooks/useSEO'
+import DangerGauge from '../components/DangerGauge'
+import CreatureReactions from '../components/CreatureReactions'
+import WitnessAccounts from '../components/WitnessAccounts'
+import BookmarkButton from '../components/BookmarkButton'
+import CreatureGallery from '../components/CreatureGallery'
+import RelatedCreatures from '../components/RelatedCreatures'
+import SightingReportModal from '../components/SightingReportModal'
+import ARSummonPreview from '../components/ARSummonPreview'
+import ShareButton from '../components/ShareButton'
 
 function CreatureProfilePage() {
   const { slug } = useParams<{ slug: string }>()
@@ -12,8 +21,18 @@ function CreatureProfilePage() {
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const [isModerator, setIsModerator] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
-  const fileRef = useRef<HTMLInputElement | null>(null)
+  const [savingDanger, setSavingDanger] = useState(false)
+
+  // Dynamic SEO
+  useSEO({
+    title: creature?.name,
+    description: creature
+      ? `${creature.name} — ${creature.creature_type.replace('_', ' ')} from ${creature.region ?? creature.country ?? 'the world'}. ${creature.description?.slice(0, 120)}…`
+      : undefined,
+    image: creature?.image_url,
+    url: creature ? `/creatures/${creature.slug}` : undefined,
+    type: 'article',
+  })
 
   useEffect(() => {
     if (!slug) { setLoading(false); return }
@@ -39,7 +58,7 @@ function CreatureProfilePage() {
         .eq('id', user.id)
         .maybeSingle()
       if (!error && data && mounted) {
-        setIsModerator(data.role === 'moderator')
+        setIsModerator(data.role?.toLowerCase() === 'moderator')
       }
     })()
     return () => { mounted = false }
@@ -135,6 +154,36 @@ function CreatureProfilePage() {
             Logged {new Date(creature.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
           </span>
         </div>
+
+        {/* Danger gauge */}
+        <div className="mt-4 flex items-center gap-4">
+          <DangerGauge
+            level={creature.danger_rating}
+            editable={isModerator && !savingDanger}
+            onChange={async (n) => {
+              setSavingDanger(true)
+              const { error } = await supabase
+                .from('creatures')
+                .update({ danger_rating: n })
+                .eq('id', creature.id)
+              if (!error) setCreature({ ...creature, danger_rating: n })
+              setSavingDanger(false)
+            }}
+          />
+          {isModerator && <span className="font-ui text-[10px] text-parchment-dim">(click skull to set danger)</span>}
+        </div>
+
+        {/* Actions row */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <BookmarkButton creatureId={creature.id} />
+          <SightingReportModal creatureId={creature.id} creatureName={creature.name} />
+          <ShareButton
+            title={`${creature.name} — LocaLore`}
+            description={creature.description?.slice(0, 120) + '…'}
+            url={window.location.href}
+          />
+          <ARSummonPreview imageUrl={creature.image_url} creatureName={creature.name} creatureType={creature.creature_type} />
+        </div>
       </header>
 
       {/* Body */}
@@ -164,76 +213,24 @@ function CreatureProfilePage() {
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          {/* Image card */}
-          <div className="overflow-hidden rounded-xl border border-app-border bg-app-surface shadow-void-deep">
-            <div className="relative h-52 bg-gradient-to-br from-app-surfaceElevated via-app-surface to-void">
-              {creature.image_url ? (
-                <img
-                  src={creature.image_url}
-                  alt={creature.name}
-                  className="h-full w-full object-cover opacity-80"
-                />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-                  <Eye className="h-8 w-8 text-parchment-dim/30" />
-                  <span className="font-ui text-[10px] uppercase tracking-[0.4em] text-parchment-dim/30">
-                    No trace captured
-                  </span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-app-surface/80 to-transparent" />
-            </div>
-            <div className="border-t border-app-border px-4 py-3">
-              <p className="font-ui text-[10px] uppercase tracking-[0.2em] text-parchment-muted">
-                Archive record
-              </p>
-              <p className="mt-0.5 font-ui text-[11px] text-parchment-dim">
-                Filed {new Date(creature.created_at).toLocaleString(undefined, {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                })}
-              </p>
-                {isModerator && (
-                  <div className="mt-3 flex items-center gap-2">
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0]
-                        if (!f || !creature) return
-                        setUploadingImage(true)
-                        try {
-                          const url = await uploadImage(f)
-                          const { error } = await supabase
-                            .from('creatures')
-                            .update({ image_url: url })
-                            .eq('id', creature.id)
-                          if (error) throw error
-                          setCreature({ ...creature, image_url: url })
-                          alert('Image updated')
-                        } catch (err) {
-                          console.error(err)
-                          alert('Failed to upload image')
-                        } finally {
-                          setUploadingImage(false)
-                          if (fileRef.current) fileRef.current.value = ''
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileRef.current?.click()}
-                      className="btn-ghost flex items-center gap-2"
-                      disabled={uploadingImage}
-                    >
-                      <ImagePlus className="h-4 w-4" />
-                      {uploadingImage ? 'Uploading…' : 'Upload image (moderator)'}
-                    </button>
-                  </div>
-                )}
-            </div>
+        {/* Image gallery */}
+          <CreatureGallery
+            creatureId={creature.id}
+            primaryImage={creature.image_url}
+            creatureName={creature.name}
+          />
+
+          {/* Archive datestamp card */}
+          <div className="rounded-xl border border-app-border bg-app-surface px-4 py-3">
+            <p className="font-ui text-[10px] uppercase tracking-[0.2em] text-parchment-muted">
+              Archive record
+            </p>
+            <p className="mt-0.5 font-ui text-[11px] text-parchment-dim">
+              Filed {new Date(creature.created_at).toLocaleString(undefined, {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              })}
+            </p>
           </div>
 
           {/* Field notes */}
@@ -248,6 +245,9 @@ function CreatureProfilePage() {
             </p>
           </div>
 
+          {/* Reactions */}
+          <CreatureReactions creatureId={creature.id} />
+
           {/* Warning band for unverified */}
           {!creature.verified && (
             <div className="rounded-xl border border-crimson/30 bg-crimson-dark/20 px-4 py-4">
@@ -260,8 +260,21 @@ function CreatureProfilePage() {
               </p>
             </div>
           )}
+
+          {/* Related creatures — removed from sidebar, now full-width below */}
         </aside>
       </div>
+
+      {/* Cross-references — full width, always visible for mods */}
+      <div className="mt-8 border-t border-app-border pt-8">
+        <RelatedCreatures creature={creature} />
+      </div>
+
+      {/* Witness accounts — full width */}
+      <div className="mt-10 border-t border-app-border pt-8">
+        <WitnessAccounts creatureId={creature.id} />
+      </div>
+
     </article>
   )
 }

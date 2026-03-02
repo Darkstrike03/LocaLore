@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /moderate
+
+Sitemap: https://localore.app/sitemap.xml

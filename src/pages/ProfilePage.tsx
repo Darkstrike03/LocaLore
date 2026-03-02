@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import { uploadImage } from '../lib/imgbb'
 import { Eye, Save } from 'lucide-react'
+import XPBadge from '../components/XPBadge'
 
 function ProfilePage() {
   const { user } = useAuth()
   const [profile, setProfile] = useState<any>(null)
   const [editMode, setEditMode] = useState(false)
+  const [userCreatures, setUserCreatures] = useState<any[]>([])
+  const [userSubmissions, setUserSubmissions] = useState<any[]>([])
+  const [entriesLoading, setEntriesLoading] = useState(true)
+  const [isModerator, setIsModerator] = useState(false)
+  const [aiEntries, setAiEntries] = useState<any[]>([])
 
   // form fields
   const [username, setUsername] = useState('')
@@ -34,6 +41,46 @@ function ProfilePage() {
       // finished loading
     }
     void load()
+  }, [user])
+
+  useEffect(() => {
+    if (!user) return
+    let mounted = true
+    ;(async () => {
+      setEntriesLoading(true)
+      // detect moderator role
+      const { data: me } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
+      if (mounted && me) setIsModerator(me.role?.toLowerCase() === 'moderator')
+
+      // fetch published creatures by this user
+      const { data: cdata } = await supabase
+        .from('creatures')
+        .select('*')
+        .eq('submitted_by', user.id)
+        .order('created_at', { ascending: false })
+
+      // fetch AI-collected pending entries for moderators
+      const { data: aidata } = await supabase
+        .from('creatures')
+        .select('*')
+        .eq('source', 'ai_collected')
+        .eq('verified', false)
+        .order('created_at', { ascending: false })
+
+      // fetch submissions by this user
+      const { data: sdata } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('submitted_by', user.id)
+        .order('created_at', { ascending: false })
+
+      if (!mounted) return
+      setUserCreatures((cdata as any[]) || [])
+      setUserSubmissions((sdata as any[]) || [])
+      setAiEntries((aidata as any[]) || [])
+      setEntriesLoading(false)
+    })()
+    return () => { mounted = false }
   }, [user])
 
   if (!user) {
@@ -126,6 +173,70 @@ function ProfilePage() {
     }
   }
 
+  async function verifyCreature(creatureId: string) {
+    try {
+      const { error } = await supabase.from('creatures').update({ verified: true }).eq('id', creatureId)
+      if (error) throw error
+      setUserCreatures((prev) => prev.map((c) => c.id === creatureId ? { ...c, verified: true } : c))
+      setAiEntries((prev) => prev.filter((a) => a.id !== creatureId))
+      alert('Creature verified')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to verify creature')
+    }
+  }
+
+  async function rejectAiEntry(creatureId: string) {
+    try {
+      const { error } = await supabase.from('creatures').delete().eq('id', creatureId)
+      if (error) throw error
+      setAiEntries((prev) => prev.filter((a) => a.id !== creatureId))
+      alert('AI entry removed')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to remove AI entry')
+    }
+  }
+
+  async function approveSubmission(sub: any) {
+    try {
+      // insert into creatures table
+      const insertPayload = {
+        slug: sub.slug ?? sub.name.toLowerCase().replace(/\s+/g, '-'),
+        name: sub.name,
+        alternate_names: sub.alternate_names || [],
+        region: sub.region || null,
+        country: sub.country || null,
+        locality: sub.locality || null,
+        latitude: sub.latitude || null,
+        longitude: sub.longitude || null,
+        creature_type: sub.creature_type || 'other',
+        description: sub.description || null,
+        origin_story: sub.origin_story || null,
+        abilities: sub.abilities || null,
+        survival_tips: sub.survival_tips || null,
+        image_url: sub.image_url || null,
+        source: 'user_submitted',
+        submitted_by: sub.submitted_by,
+        verified: true,
+      }
+      const { data: created, error: insErr } = await supabase.from('creatures').insert(insertPayload).select().maybeSingle()
+      if (insErr) throw insErr
+
+      // mark submission approved
+      const { error: upErr } = await supabase.from('submissions').update({ status: 'approved', creature_id: (created as any).id }).eq('id', sub.id)
+      if (upErr) throw upErr
+
+      // update local lists
+      setUserSubmissions((prev) => prev.filter((s) => s.id !== sub.id))
+      setUserCreatures((prev) => [(created as any), ...prev])
+      alert('Submission approved and published')
+    } catch (err) {
+      console.error(err)
+      alert('Failed to approve submission')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-app-background px-4 py-8">
       <div className="mx-auto max-w-3xl">
@@ -153,6 +264,9 @@ function ProfilePage() {
                   </div>
                 </div>
                 <p className="mt-4 text-parchment-dim">{profile?.bio}</p>
+                <div className="mt-5">
+                  <XPBadge xp={profile?.xp ?? 0} />
+                </div>
               </div>
             </div>
           ) : (
@@ -209,6 +323,106 @@ function ProfilePage() {
                 </button>
               </div>
             </form>
+          )}
+        </div>
+        {/* User entries */}
+        <div className="mt-8 space-y-6">
+          <h3 className="font-heading text-lg text-gold">Your entries</h3>
+
+          {entriesLoading ? (
+            <p className="text-parchment-muted">Loading your entries…</p>
+          ) : (
+            <div className="grid gap-4">
+              {/* Published creatures */}
+              <div>
+                <h4 className="font-ui text-sm text-parchment-muted uppercase tracking-[0.18em] mb-3">Published</h4>
+                {userCreatures.length === 0 ? (
+                  <p className="text-parchment-dim">You have no published entries yet.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {userCreatures.map((c) => (
+                      <div key={c.id} className="flex items-center justify-between rounded-lg border border-app-border bg-app-surface p-3 hover:border-gold/30 transition-colors">
+                        <Link to={`/creatures/${c.slug}`} className="flex flex-1 min-w-0 items-center gap-3 group">
+                          <div className="h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-void/20 border border-app-border">
+                            {c.image_url ? <img src={c.image_url} alt={c.name} className="h-full w-full object-cover group-hover:opacity-90 transition-opacity" /> : <Eye className="h-6 w-6 text-parchment-dim m-2" />}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-heading text-sm text-gold group-hover:text-gold/80 transition-colors truncate">{c.name}</div>
+                            <div className="text-[12px] text-parchment-muted truncate">{c.region || ''} {c.country ? `· ${c.country}` : ''}</div>
+                          </div>
+                        </Link>
+                        <div className="flex flex-shrink-0 items-center gap-3 ml-3">
+                          {!c.verified ? <span className="font-ui text-xs text-crimson/80">Unverified</span> : <span className="font-ui text-xs text-gold/80">Verified</span>}
+                          {isModerator && !c.verified && (
+                            <button type="button" onClick={() => verifyCreature(c.id)} className="btn-ghost">Verify</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Submissions */}
+              <div>
+                <h4 className="font-ui text-sm text-parchment-muted uppercase tracking-[0.18em] mb-3">Submissions (pending)</h4>
+                {userSubmissions.length === 0 ? (
+                  <p className="text-parchment-dim">You have no pending submissions.</p>
+                ) : (
+                  <div className="grid gap-3">
+                    {userSubmissions.map((s) => (
+                      <div key={s.id} className="flex items-center justify-between rounded-lg border border-app-border bg-app-surface p-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-md overflow-hidden bg-void/20 border border-app-border">
+                            {s.image_url ? <img src={s.image_url} alt={s.name} className="h-full w-full object-cover" /> : <Eye className="h-6 w-6 text-parchment-dim m-2" />}
+                          </div>
+                          <div>
+                            <div className="font-heading text-sm text-gold">{s.name}</div>
+                            <div className="text-[12px] text-parchment-muted">{s.region || ''} {s.country ? `· ${s.country}` : ''}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-ui text-xs text-parchment-muted">{s.status || 'pending'}</span>
+                          {isModerator && (
+                            <button type="button" onClick={() => approveSubmission(s)} className="btn-ghost">Approve</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* AI-collected entries (moderator review) */}
+              {isModerator && (
+                <div>
+                  <h4 className="font-ui text-sm text-parchment-muted uppercase tracking-[0.18em] mb-3">AI-collected (review)</h4>
+                  {aiEntries.length === 0 ? (
+                    <p className="text-parchment-dim">No AI-collected entries awaiting review.</p>
+                  ) : (
+                    <div className="grid gap-3">
+                      {aiEntries.map((a) => (
+                        <div key={a.id} className="flex items-center justify-between rounded-lg border border-app-border bg-app-surface p-3 hover:border-gold/30 transition-colors">
+                          <Link to={`/creatures/${a.slug}`} className="flex flex-1 min-w-0 items-center gap-3 group">
+                            <div className="h-12 w-12 flex-shrink-0 rounded-md overflow-hidden bg-void/20 border border-app-border">
+                              {a.image_url ? <img src={a.image_url} alt={a.name} className="h-full w-full object-cover group-hover:opacity-90 transition-opacity" /> : <Eye className="h-6 w-6 text-parchment-dim m-2" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-heading text-sm text-gold group-hover:text-gold/80 transition-colors truncate">{a.name}</div>
+                              <div className="text-[12px] text-parchment-muted truncate">{a.region || ''} {a.country ? `· ${a.country}` : ''}</div>
+                            </div>
+                          </Link>
+                          <div className="flex flex-shrink-0 items-center gap-3 ml-3">
+                            <span className="font-ui text-xs text-parchment-muted">AI-collected</span>
+                            <button type="button" onClick={() => verifyCreature(a.id)} className="btn-ghost">Approve</button>
+                            <button type="button" onClick={() => rejectAiEntry(a.id)} className="btn-ghost">Reject</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

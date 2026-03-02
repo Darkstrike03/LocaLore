@@ -21,6 +21,8 @@ function LibraryPage() {
   const [search, setSearch] = useState('')
   const [region, setRegion] = useState('')
   const [creatureType, setCreatureType] = useState<CreatureType | 'all'>('all')
+  const [verifiedFilter, setVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all')
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'danger_desc' | 'danger_asc'>('newest')
 
   useEffect(() => {
     supabase
@@ -42,8 +44,8 @@ function LibraryPage() {
   )
 
   const filtered = useMemo(
-    () =>
-      creatures.filter((c) => {
+    () => {
+      const base = creatures.filter((c) => {
         const matchesSearch =
           !search ||
           c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -52,9 +54,24 @@ function LibraryPage() {
           )
         const matchesRegion = !region || c.region === region
         const matchesType = creatureType === 'all' || c.creature_type === creatureType
-        return matchesSearch && matchesRegion && matchesType
-      }),
-    [creatures, search, region, creatureType],
+        const matchesVerified =
+          verifiedFilter === 'all' ||
+          (verifiedFilter === 'verified' && c.verified) ||
+          (verifiedFilter === 'unverified' && !c.verified)
+        return matchesSearch && matchesRegion && matchesType && matchesVerified
+      })
+
+      base.sort((a, b) => {
+        if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        if (sortBy === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        if (sortBy === 'danger_desc') return (b.danger_rating ?? 0) - (a.danger_rating ?? 0)
+        if (sortBy === 'danger_asc') return (a.danger_rating ?? 0) - (b.danger_rating ?? 0)
+        return 0
+      })
+
+      return base
+    },
+    [creatures, search, region, creatureType, verifiedFilter, sortBy],
   )
 
   return (
@@ -123,6 +140,27 @@ function LibraryPage() {
           {creatureTypeOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
+        </select>
+        <select
+          aria-label="Filter by verification status"
+          value={verifiedFilter}
+          onChange={(e) => setVerifiedFilter(e.target.value as 'all' | 'verified' | 'unverified')}
+          className="input-forge text-sm sm:w-36"
+        >
+          <option value="all">All status</option>
+          <option value="verified">Verified only</option>
+          <option value="unverified">Unverified</option>
+        </select>
+        <select
+          aria-label="Sort by"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'danger_desc' | 'danger_asc')}
+          className="input-forge text-sm sm:w-40"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="danger_desc">Danger ↓ highest</option>
+          <option value="danger_asc">Danger ↑ lowest</option>
         </select>
       </div>
 

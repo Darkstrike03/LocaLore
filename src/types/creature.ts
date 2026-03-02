@@ -9,6 +9,43 @@ export type CreatureType =
 
 export type CreatureSource = 'user_submitted' | 'ai_collected'
 
+export type ReactionType =
+  | 'seen' | 'chilling' | 'disbelief'
+  | 'terrified' | 'survived' | 'cursed' | 'revered' | 'haunted' | 'hunting'
+
+export type XpEventType =
+  | 'submit_creature' | 'creature_verified' | 'comment' | 'react'
+  | 'bookmark_received' | 'sighting_filed'
+
+export interface CreatureImage {
+  id: string
+  creature_id: string
+  url: string
+  caption: string | null
+  uploaded_by: string | null
+  created_at: string
+}
+
+export interface SightingReport {
+  id: string
+  creature_id: string
+  user_id: string | null
+  display_name: string | null
+  latitude: number
+  longitude: number
+  description: string | null
+  created_at: string
+}
+
+export interface XpEvent {
+  id: string
+  user_id: string
+  event_type: XpEventType
+  xp_amount: number
+  reference_id: string | null
+  created_at: string
+}
+
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected'
 
 /** Row shape for the `creatures` table (curated / approved entries) */
@@ -29,6 +66,7 @@ export interface Creature {
   survival_tips: string | null
   image_url: string | null
   verified: boolean
+  danger_rating: number | null
   source: CreatureSource
   submitted_by: string | null
   created_at: string
