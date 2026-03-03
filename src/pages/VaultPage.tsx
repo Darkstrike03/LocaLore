@@ -76,6 +76,10 @@ export default function VaultPage() {
 
     // 2. For each rarity, pick a random card_definition
     const cardResults: (UserCard & { definition: NonNullable<UserCard['definition']> })[] = []
+    // Track copies minted within this pack open so the same def drawn twice
+    // gets consecutive unique serials instead of both landing on copies_minted+1.
+    const localMinted = new Map<string, number>()
+
     for (const rarity of rarities) {
       const { data: defs } = await supabase
         .from('card_definitions')
@@ -92,8 +96,14 @@ export default function VaultPage() {
         : defs
       const def = eligible[Math.floor(Math.random() * eligible.length)]
 
-      // Mint new copy
-      const serial = (def.copies_minted ?? 0) + 1
+      // Mint new copy — use localMinted so duplicate def draws in one pack
+      // each get their own unique serial number.
+      const base = localMinted.has(def.id)
+        ? localMinted.get(def.id)!
+        : (def.copies_minted ?? 0)
+      const serial = base + 1
+      localMinted.set(def.id, serial)
+
       const grade = def.is_event_exclusive ? 'mint' : 'near_mint'
 
       const { data: newCard } = await supabase
@@ -105,12 +115,12 @@ export default function VaultPage() {
         .select('*')
         .single()
 
-      // Increment copies_minted
+      // Increment copies_minted to the highest serial assigned for this def
       await supabase.from('card_definitions')
         .update({ copies_minted: serial })
         .eq('id', def.id)
 
-      if (newCard) cardResults.push({ ...newCard, definition: { ...def } })
+      if (newCard) cardResults.push({ ...newCard, definition: { ...def, copies_minted: serial } })
     }
 
     // 3. Guard — if no cards could be minted (empty card_definitions), abort
