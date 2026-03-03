@@ -304,7 +304,7 @@ export default function CollectionPage() {
 
       {/* ── Grid view ────────────────────────────────────────────────────── */}
       {viewMode === 'cards' && displayMode === 'grid' && filtered.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-2">
           {filtered.map((card, i) => (
             <div key={card.id} className="relative flex justify-center">
               <CardDisplay
@@ -401,10 +401,36 @@ export default function CollectionPage() {
 
         async function shareNative() {
           if (navigator.share) {
+            // Try to include the card image when possible (Web Share API Level 2)
+            if (cardDownloadRef.current) {
+              try {
+                const canvas = await html2canvas(cardDownloadRef.current, {
+                  backgroundColor: null,
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                })
+                const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+                if (blob) {
+                  const file = new File([blob], `${creature?.name ?? 'card'}-localore.png`, { type: 'image/png' })
+                  try {
+                    if ((navigator as any).canShare && (navigator as any).canShare({ files: [file] })) {
+                      await navigator.share({ files: [file], title: `${creature?.name} — LocaLore`, text: shareText })
+                      return
+                    }
+                  } catch {
+                    // fall through to URL share
+                  }
+                }
+              } catch {
+                // canvas generation failed — fall back to URL share
+              }
+            }
+
             try {
               await navigator.share({ title: `${creature?.name} — LocaLore`, text: shareText, url: creatureUrl })
               return
-            } catch { /* user cancelled */ }
+            } catch { /* user cancelled or platform doesn't support files */ }
           }
           shareWhatsApp()
         }

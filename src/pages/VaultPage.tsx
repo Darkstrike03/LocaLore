@@ -42,6 +42,7 @@ export default function VaultPage() {
   const [loading, setLoading]     = useState(true)
   const [opening, setOpening]     = useState<CardPack | null>(null)
   const [newCards, setNewCards]   = useState<(UserCard & { definition: NonNullable<UserCard['definition']> })[]>([])
+  const [packLoading, setPackLoading] = useState(false)
   const [showEarn, setShowEarn]   = useState(false)
   const [error, setError]         = useState<string | null>(null)
 
@@ -67,7 +68,10 @@ export default function VaultPage() {
       return
     }
 
-    // 1. Pick rarities
+    // Show loading modal immediately so user sees feedback
+    setNewCards([])
+    setOpening(pack)
+    setPackLoading(true)
     const rarities = Array.from({ length: pack.card_count }, () => pickRarity(pack))
 
     // 2. For each rarity, pick a random card_definition
@@ -111,6 +115,8 @@ export default function VaultPage() {
 
     // 3. Guard — if no cards could be minted (empty card_definitions), abort
     if (cardResults.length === 0) {
+      setOpening(null)
+      setPackLoading(false)
       setError('No cards are available in the archive yet. An archivist must define card entries first.')
       return
     }
@@ -125,7 +131,7 @@ export default function VaultPage() {
 
     setBalance(newBalance)
     setNewCards(cardResults)
-    setOpening(pack)
+    setPackLoading(false)
   }
 
   if (loading) return (
@@ -302,11 +308,12 @@ export default function VaultPage() {
       </div>
 
       {/* ── Pack opening modal ───────────────────────────────────────────── */}
-      {opening && newCards.length > 0 && (
+      {opening && (
         <PackOpeningModal
           cards={newCards}
           packName={opening.name}
-          onClose={() => { setOpening(null); setNewCards([]) }}
+          loading={packLoading}
+          onClose={() => { setOpening(null); setNewCards([]); setPackLoading(false) }}
         />
       )}
 
