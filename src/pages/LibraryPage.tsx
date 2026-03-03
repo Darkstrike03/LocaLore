@@ -1,5 +1,6 @@
-import { useMemo, useState, useEffect } from 'react'
-import { BookOpen, Search, SlidersHorizontal, Skull } from 'lucide-react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { BookOpen, Search, SlidersHorizontal, Skull, Dices, Eye } from 'lucide-react'
 import type { Creature, CreatureType } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
 import { CreatureCard } from '../components/CreatureCard'
@@ -15,6 +16,59 @@ const creatureTypeOptions: { value: CreatureType | 'all'; label: string }[] = [
   { value: 'other', label: 'Other' },
 ]
 
+// ─── Rotating empty-state microcopy ───────────────────────────────────────────
+const SEARCH_LINES: [string, string][] = [
+  ["The archive has no record of this.", "It either doesn't exist, or it does and prefers not to be found."],
+  ["Nothing answers to that name.", "Some entities respond poorly to being looked up directly."],
+  ["This entry does not exist.", "Which is exactly what it would want you to think."],
+  ["The archive drew a blank.", "That's unusual. The archive never draws blanks voluntarily."],
+  ["No match found.", "The creature you seek may be listed under a different name. Or a different dimension."],
+]
+const FILTER_LINES: [string, string][] = [
+  ["Nothing stirs under these conditions.", "The filters may be too specific. Or the creatures too evasive."],
+  ["The archive returns nothing.", "Widen the parameters. Or accept that some things resist classification."],
+  ["No entities match this configuration.", "That's either reassuring or deeply suspicious."],
+  ["Empty. Which is not the same as safe.", "Try loosening your search. Or accept the silence."],
+]
+
+function EmptyState({
+  search, hasFilters, onClear,
+}: { search: string; hasFilters: boolean; onClear: () => void }) {
+  const [heading, body] = useMemo(() => {
+    const pool = search ? SEARCH_LINES : FILTER_LINES
+    const seed = search.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || Math.floor(Date.now() / 60000)
+    return pool[seed % pool.length]
+  }, [search])
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-5 py-20 text-center">
+      <div className="relative">
+        <span className="absolute inset-0 rounded-full border border-parchment-dim/10 animate-glow-pulse" />
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-app-border bg-app-surface">
+          {search ? (
+            <Skull className="h-6 w-6 text-parchment-dim/40" />
+          ) : (
+            <Eye className="h-6 w-6 text-parchment-dim/40" />
+          )}
+        </div>
+      </div>
+      <div className="max-w-xs">
+        <p className="font-heading text-base text-gold/70 leading-snug">{heading}</p>
+        <p className="mt-1.5 font-body text-sm text-parchment-muted/70 leading-relaxed italic">{body}</p>
+      </div>
+      {(search || hasFilters) && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="btn-ghost text-[11px] py-1.5 px-4"
+        >
+          Clear all filters
+        </button>
+      )}
+    </div>
+  )
+}
+
 function LibraryPage() {
   const [creatures, setCreatures] = useState<Creature[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,6 +77,18 @@ function LibraryPage() {
   const [creatureType, setCreatureType] = useState<CreatureType | 'all'>('all')
   const [verifiedFilter, setVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all')
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'danger_desc' | 'danger_asc'>('newest')
+  const [diceSpinning, setDiceSpinning] = useState(false)
+  const navigate = useNavigate()
+
+  const handleRandom = useCallback(() => {
+    if (!creatures.length) return
+    setDiceSpinning(true)
+    const pick = creatures[Math.floor(Math.random() * creatures.length)]
+    setTimeout(() => {
+      setDiceSpinning(false)
+      navigate(`/creatures/${pick.slug}`)
+    }, 380)
+  }, [creatures, navigate])
 
   useEffect(() => {
     supabase
@@ -91,7 +157,7 @@ function LibraryPage() {
         </p>
 
         {/* Stats strip */}
-        <div className="mt-5 flex flex-wrap gap-4">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2">
             <Skull className="h-3.5 w-3.5 text-gold" />
             <span className="font-ui text-xs text-parchment">{creatures.length} entries catalogued</span>
@@ -100,6 +166,19 @@ function LibraryPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-crimson animate-pin-pulse" />
             <span className="font-ui text-xs text-parchment">{creatures.filter(c => !c.verified).length} unverified sightings</span>
           </div>
+
+          <button
+            type="button"
+            onClick={handleRandom}
+            disabled={loading || creatures.length === 0}
+            title="Conjure a random entry from the archive"
+            className="ml-auto flex items-center gap-2 rounded-lg border border-gold/30 bg-gold/5 px-4 py-2 font-ui text-[11px] uppercase tracking-[0.25em] text-gold/80 transition-all hover:border-gold/60 hover:bg-gold/10 hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Dices
+              className={`h-3.5 w-3.5 transition-transform duration-300 ${diceSpinning ? 'rotate-180 scale-125' : ''}`}
+            />
+            Conjure random entry
+          </button>
         </div>
       </header>
 
@@ -173,15 +252,11 @@ function LibraryPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-            <Skull className="h-8 w-8 text-parchment-dim" />
-            <p className="font-heading text-base text-gold/70">
-              Nothing stirs in the dark.
-            </p>
-            <p className="font-body text-sm text-parchment-muted">
-              Try clearing your filters or casting a wider search.
-            </p>
-          </div>
+          <EmptyState
+            search={search}
+            hasFilters={region !== '' || creatureType !== 'all' || verifiedFilter !== 'all'}
+            onClear={() => { setSearch(''); setRegion(''); setCreatureType('all'); setVerifiedFilter('all') }}
+          />
         ) : (
           <>
             <p className="mb-4 font-ui text-[11px] text-parchment-muted">

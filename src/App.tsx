@@ -1,40 +1,80 @@
-import { Route, Routes, NavLink } from 'react-router-dom'
-import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked } from 'lucide-react'
+import { lazy, Suspense, useState, useEffect, useRef } from 'react'
+import { Route, Routes, NavLink, Navigate, useLocation } from 'react-router-dom'
+import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
-import HomePage from './pages/HomePage'
-import LibraryPage from './pages/LibraryPage'
-import CreatureProfilePage from './pages/CreatureProfilePage'
-import SubmitCreaturePage from './pages/SubmitCreaturePage'
-import AboutPage from './pages/AboutPage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
-import TermsPage from './pages/TermsPage'
-import ContactPage from './pages/ContactPage'
-import ModerationPage from './pages/ModerationPage'
-import ProfilePage from './pages/ProfilePage'
-import GrimoirePage from './pages/GrimoirePage'
-import PublicProfilePage from './pages/PublicProfilePage'
 import AuthModal from './components/AuthModal'
+import LiveCounterBar from './components/LiveCounterBar'
+import SeasonalBanner from './components/SeasonalBanner'
 import { useAuth } from './context/AuthContext'
-import { useState, useEffect } from 'react'
+
+// ─── Lazy-loaded pages ────────────────────────────────────────────────────────
+const HomePage            = lazy(() => import('./pages/HomePage'))
+const LandingPage         = lazy(() => import('./pages/LandingPage'))
+const LibraryPage         = lazy(() => import('./pages/LibraryPage'))
+const CreatureProfilePage = lazy(() => import('./pages/CreatureProfilePage'))
+const SubmitCreaturePage  = lazy(() => import('./pages/SubmitCreaturePage'))
+const AboutPage           = lazy(() => import('./pages/AboutPage'))
+const PrivacyPolicyPage   = lazy(() => import('./pages/PrivacyPolicyPage'))
+const TermsPage           = lazy(() => import('./pages/TermsPage'))
+const ContactPage         = lazy(() => import('./pages/ContactPage'))
+const ModerationPage      = lazy(() => import('./pages/ModerationPage'))
+const ProfilePage         = lazy(() => import('./pages/ProfilePage'))
+const GrimoirePage        = lazy(() => import('./pages/GrimoirePage'))
+const LeaderboardPage     = lazy(() => import('./pages/LeaderboardPage'))
+const PublicProfilePage   = lazy(() => import('./pages/PublicProfilePage'))
+const VaultPage           = lazy(() => import('./pages/VaultPage'))
+const CollectionPage      = lazy(() => import('./pages/CollectionPage'))
+const CommunityHubPage    = lazy(() => import('./pages/CommunityHubPage'))
+const MarketplacePage     = lazy(() => import('./pages/MarketplacePage'))
+const AuctionHousePage    = lazy(() => import('./pages/AuctionHousePage'))
+const TradePage           = lazy(() => import('./pages/TradePage'))
 
 const navItems = [
-  { to: '/', icon: MapPin, label: 'Map' },
-  { to: '/library', icon: BookOpen, label: 'Library' },
-  { to: '/grimoire', icon: BookMarked, label: 'Grimoire' },
-  { to: '/submit', icon: Scroll, label: 'Submit' },
-  { to: '/about', icon: Info, label: 'About' },
+  { to: '/map',         icon: MapPin,     label: 'Map' },
+  { to: '/library',     icon: BookOpen,   label: 'Library' },
+  { to: '/grimoire',    icon: BookMarked, label: 'Grimoire' },
+  { to: '/leaderboard', icon: Trophy,     label: 'Order' },
+  { to: '/submit',      icon: Scroll,     label: 'Submit' },
+  { to: '/about',       icon: Info,       label: 'About' },
+]
+
+const communityItems = [
+  { to: '/hub',        icon: Users,          label: 'Hub' },
+  { to: '/vault',      icon: Archive,        label: 'Vault' },
+  { to: '/collection', icon: Layers,         label: 'Collection' },
+  { to: '/market',     icon: Tag,            label: 'Market' },
+  { to: '/auction',    icon: Gavel,          label: 'Auction' },
+  { to: '/trade',      icon: ArrowRightLeft, label: 'Trade' },
 ]
 
 function App() {
   const { user, signOut, openAuthModal } = useAuth()
+  const location = useLocation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [communityOpen, setCommunityOpen] = useState(false)
+  const [mobileCommunityOpen, setMobileCommunityOpen] = useState(false)
+  const communityRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (communityRef.current && !communityRef.current.contains(e.target as Node)) {
+        setCommunityOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const isCommunityActive = communityItems.some(
+    item => location.pathname === item.to || location.pathname.startsWith(item.to + '/')
+  )
 
   return (
     <div className="min-h-screen flex flex-col bg-app-background text-parchment">
@@ -93,6 +133,47 @@ function App() {
                 {label}
               </NavLink>
             ))}
+
+            {/* Community dropdown */}
+            <div className="relative" ref={communityRef}>
+              <button
+                type="button"
+                onClick={() => setCommunityOpen(o => !o)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-ui font-medium uppercase tracking-[0.2em] transition-all duration-200 ${
+                  isCommunityActive
+                    ? 'bg-gold/10 text-gold border border-gold/25'
+                    : 'text-parchment-muted hover:text-parchment hover:bg-app-surface border border-transparent'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Community
+                <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${
+                  communityOpen ? 'rotate-180' : ''
+                }`} />
+              </button>
+
+              {communityOpen && (
+                <div className="absolute left-0 top-full z-50 mt-1.5 w-44 overflow-hidden rounded-xl border border-app-border bg-void/98 py-1 shadow-void-deep backdrop-blur-2xl animate-rise">
+                  {communityItems.map(({ to, icon: Icon, label }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      onClick={() => setCommunityOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center gap-2.5 px-3 py-2.5 text-[11px] font-ui font-medium uppercase tracking-[0.2em] transition-colors ${
+                          isActive
+                            ? 'bg-gold/10 text-gold'
+                            : 'text-parchment-muted hover:bg-app-surface hover:text-parchment'
+                        }`
+                      }
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Auth control */}
             {user ? (
@@ -160,6 +241,45 @@ function App() {
                 </NavLink>
               ))}
 
+              {/* Community section (mobile) */}
+              <button
+                type="button"
+                onClick={() => setMobileCommunityOpen(o => !o)}
+                className={`mt-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-ui uppercase tracking-[0.2em] transition-all border-l-2 pl-2.5 ${
+                  isCommunityActive
+                    ? 'bg-gold/10 text-gold border-gold'
+                    : 'text-parchment-muted hover:text-parchment hover:bg-app-surface border-transparent'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                <span className="flex-1 text-left">Community</span>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${
+                  mobileCommunityOpen ? 'rotate-180' : ''
+                }`} />
+              </button>
+
+              {mobileCommunityOpen && (
+                <div className="ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-gold/20 pl-3">
+                  {communityItems.map(({ to, icon: Icon, label }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      onClick={() => { setMobileNavOpen(false); setMobileCommunityOpen(false) }}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-ui uppercase tracking-[0.2em] transition-all ${
+                          isActive
+                            ? 'bg-gold/10 text-gold'
+                            : 'text-parchment-muted hover:text-parchment hover:bg-app-surface'
+                        }`
+                      }
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+
               {user ? (
                 <>
                   <NavLink
@@ -197,11 +317,22 @@ function App() {
           </div>
         )}
       </header>
+      <SeasonalBanner />
+      <LiveCounterBar />
 
       {/* ── MAIN CONTENT ── */}
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
+        <Suspense fallback={
+          <div className="flex h-[60vh] items-center justify-center">
+            <span className="relative flex h-10 w-10 items-center justify-center">
+              <span className="absolute inset-0 rounded-full border border-gold/30 animate-glow-pulse" />
+              <Eye className="h-5 w-5 text-gold animate-flicker" />
+            </span>
+          </div>
+        }>
+          <Routes>
+          <Route path="/" element={user ? <Navigate to="/map" replace /> : <LandingPage />} />
+          <Route path="/map" element={<HomePage />} />
           <Route path="/library" element={<LibraryPage />} />
           <Route path="/creatures/:slug" element={<CreatureProfilePage />} />
           <Route path="/submit" element={<SubmitCreaturePage />} />
@@ -209,11 +340,20 @@ function App() {
           <Route path="/profile/:username" element={<PublicProfilePage />} />
           <Route path="/moderate" element={<ModerationPage />} />
           <Route path="/grimoire" element={<GrimoirePage />} />
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/hub" element={<CommunityHubPage />} />
+          <Route path="/vault" element={<VaultPage />} />
+          <Route path="/collection" element={<CollectionPage />} />
+          <Route path="/collection/:username" element={<CollectionPage />} />
+          <Route path="/market" element={<MarketplacePage />} />
+          <Route path="/auction" element={<AuctionHousePage />} />
+          <Route path="/trade" element={<TradePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Routes>
+        </Suspense>
       </main>
 
       {/* ── FOOTER ── */}

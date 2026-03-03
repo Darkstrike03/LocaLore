@@ -320,6 +320,7 @@ export default function ARSummonPreview({ imageUrl, secondaryImageUrl, modelUrl,
               auto-rotate-delay={2000}
               shadow-intensity={1}
               exposure={0.8}
+              onLoad={() => console.log(`[LocaLore] 3D model loaded: ${creatureName}`)}
               style={{
                 width: '100%',
                 height: '100%',

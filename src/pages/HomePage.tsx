@@ -6,6 +6,8 @@ import MapLegend from '../components/MapLegend'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
 import { Eye, MapPin, Skull, ShieldAlert, Sword, BookMarked, ChevronRight } from 'lucide-react'
+import CreatureOfTheRite from '../components/CreatureOfTheRite'
+import RecentlyWitnessed from '../components/RecentlyWitnessed'
 import type { Creature } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
 
@@ -290,25 +292,23 @@ function HomePage() {
               </Link>
             </div>
           ) : (
-            /* Empty state */
-            <div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-4 text-center px-2">
-              <div className="relative">
-                <span className="absolute inset-0 rounded-full border border-gold/20 animate-glow-pulse" />
-                <div className="relative flex h-14 w-14 items-center justify-center rounded-full border border-gold/30 bg-app-surface">
-                  <MapPin className="h-6 w-6 text-gold/60" />
+            /* Empty state — daily rite */
+            <div className="flex flex-col gap-4 px-0 pt-0">
+              <CreatureOfTheRite />
+
+              {/* Subtle map hint */}
+              <div className="flex flex-col items-center gap-2 text-center px-2">
+                <div className="flex items-center gap-2 text-parchment-dim/40">
+                  <span className="h-px w-8 bg-app-border" />
+                  <MapPin className="h-3 w-3" />
+                  <span className="h-px w-8 bg-app-border" />
                 </div>
-              </div>
-              <div>
-                <p className="font-heading text-base text-gold/80">
-                  Trace the echoes.
-                </p>
-                <p className="mt-1.5 font-body text-[13px] text-parchment-muted leading-relaxed">
-                  Select any glowing marker on the map to summon a creature from the archive.
+                <p className="font-body text-[12px] text-parchment-muted/60 leading-relaxed">
+                  Select a glowing marker to summon any entry from the archive.
                 </p>
               </div>
-              <Link to="/library" className="btn-ghost text-xs mt-1">
-                Browse the bestiary
-              </Link>
+
+              <RecentlyWitnessed />
             </div>
           )}
         </div>

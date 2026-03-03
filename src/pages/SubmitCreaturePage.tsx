@@ -119,6 +119,16 @@ function SubmitCreaturePage() {
 
       if (insertError) throw insertError
 
+      // Award +50 XP for submitting — fire-and-forget
+      void (async () => {
+        await supabase.from('xp_events').insert({
+          user_id:    user.id,
+          event_type: 'submit_creature',
+          xp_amount:  50,
+        })
+        await supabase.rpc('increment_user_xp', { uid: user.id, amount: 50 })
+      })()
+
       setSuccess(true)
       setName(''); setAlternateNames(''); setRegion(''); setCountry('')
       setLocality(''); setDescription(''); setOriginStory('')

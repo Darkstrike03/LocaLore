@@ -86,6 +86,55 @@ export default {
           '0%': { backgroundPosition: '0% 0%' },
           '100%': { backgroundPosition: '0% 100%' },
         },
+        // ── Card animations ───────────────────────────────────────────────────
+        'card-flip': {
+          '0%':   { transform: 'perspective(800px) rotateY(0deg)' },
+          '50%':  { transform: 'perspective(800px) rotateY(90deg)' },
+          '100%': { transform: 'perspective(800px) rotateY(0deg)' },
+        },
+        'card-rise': {
+          from: { opacity: '0', transform: 'perspective(800px) translateY(40px) rotateX(8deg) scale(0.94)' },
+          to:   { opacity: '1', transform: 'perspective(800px) translateY(0) rotateX(0deg) scale(1)' },
+        },
+        'foil-sweep': {
+          '0%':   { backgroundPosition: '200% center' },
+          '100%': { backgroundPosition: '-200% center' },
+        },
+        'hue-cycle': {
+          '0%':   { filter: 'hue-rotate(0deg) saturate(1.6)' },
+          '100%': { filter: 'hue-rotate(360deg) saturate(1.6)' },
+        },
+        'void-glitch': {
+          '0%, 90%, 100%': { clipPath: 'inset(0 0 0 0)', transform: 'translate(0)' },
+          '92%': { clipPath: 'inset(20% 0 30% 0)', transform: 'translate(-4px, 1px)' },
+          '94%': { clipPath: 'inset(50% 0 10% 0)', transform: 'translate(4px, -2px)' },
+          '96%': { clipPath: 'inset(10% 0 60% 0)', transform: 'translate(-2px, 3px)' },
+          '98%': { clipPath: 'inset(0 0 0 0)', transform: 'translate(0)' },
+        },
+        'ephemeral-border': {
+          '0%, 100%': { borderColor: 'rgba(167,139,250,0.5)' },
+          '33%': { borderColor: 'rgba(236,72,153,0.6)' },
+          '66%': { borderColor: 'rgba(99,102,241,0.7)' },
+        },
+        'pack-shake': {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '20%': { transform: 'rotate(-3deg) scale(1.02)' },
+          '40%': { transform: 'rotate(3deg) scale(1.04)' },
+          '60%': { transform: 'rotate(-2deg) scale(1.02)' },
+          '80%': { transform: 'rotate(2deg)' },
+        },
+        'market-ticker': {
+          from: { transform: 'translateX(0)' },
+          to:   { transform: 'translateX(-50%)' },
+        },
+        'count-up': {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
+        },
+        'auction-pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
+          '50%': { boxShadow: '0 0 0 6px rgba(239,68,68,0.15)' },
+        },
       },
       animation: {
         'pin-pulse': 'pin-pulse 2.2s ease-in-out infinite',
@@ -93,6 +142,17 @@ export default {
         'rise': 'rise 500ms ease-out',
         'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
         'flicker': 'flicker 8s ease-in-out infinite',
+        // ── Card animations ────────────────────────────────────────────────────
+        'card-flip':        'card-flip 0.6s ease-in-out',
+        'card-rise':        'card-rise 500ms cubic-bezier(0.16,1,0.3,1) forwards',
+        'foil-sweep':       'foil-sweep 3s linear infinite',
+        'hue-cycle':        'hue-cycle 6s linear infinite',
+        'void-glitch':      'void-glitch 5s ease-in-out infinite',
+        'ephemeral-border': 'ephemeral-border 3s ease-in-out infinite',
+        'pack-shake':       'pack-shake 0.5s ease-in-out',
+        'market-ticker':    'market-ticker 30s linear infinite',
+        'count-up':         'count-up 300ms ease-out forwards',
+        'auction-pulse':    'auction-pulse 2s ease-in-out infinite',
       },
     },
   },

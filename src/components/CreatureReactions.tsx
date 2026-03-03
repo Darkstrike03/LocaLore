@@ -3,6 +3,7 @@ import { Eye, Snowflake, HelpCircle, AlertTriangle, Sword, Flame, Sparkles, Ghos
 import type { LucideIcon } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { awardAnima } from '../lib/anima'
 import type { ReactionType } from '../types/creature'
 
 interface ReactionDef {
@@ -75,6 +76,17 @@ export default function CreatureReactions({ creatureId }: { creatureId: string }
       await supabase.from('creature_reactions').insert({ creature_id: creatureId, user_id: user.id, reaction })
       setCounts(c => ({ ...c, [reaction]: c[reaction] + 1 }))
       setMine(m => new Set([...m, reaction]))
+      // Award +10 XP + 1 Anima — fire-and-forget, never blocks UI
+      void (async () => {
+        await supabase.from('xp_events').insert({
+          user_id:      user.id,
+          event_type:   'react',
+          xp_amount:    10,
+          reference_id: creatureId,
+        })
+        await supabase.rpc('increment_user_xp', { uid: user.id, amount: 10 })
+      })()
+      void awardAnima(user.id, 'react', creatureId)
     }
   }
 

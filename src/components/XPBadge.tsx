@@ -1,15 +1,15 @@
 import { Zap } from 'lucide-react'
 
 const RANKS = [
-  { min: 0,    label: 'Murmur',     color: 'text-parchment-dim'  },
-  { min: 50,   label: 'Wanderer',   color: 'text-parchment'      },
-  { min: 200,  label: 'Chronicler', color: 'text-gold/70'        },
-  { min: 600,  label: 'Keeper',     color: 'text-gold'           },
-  { min: 1500, label: 'Archivist',  color: 'text-gold'           },
-  { min: 3500, label: 'Loremaster', color: 'text-crimson'        },
+  { min: 0,    label: 'Initiate',      subtitle: 'You have opened the archive.',              color: 'text-parchment-dim',  bar: 'from-parchment-dim/40 to-parchment-dim/60'   },
+  { min: 50,   label: 'Seeker',        subtitle: 'Something drew you here.',                  color: 'text-parchment',      bar: 'from-parchment/40 to-parchment/70'           },
+  { min: 200,  label: 'Archivist',     subtitle: 'You maintain the record.',                  color: 'text-gold/70',        bar: 'from-gold/40 to-gold/60'                     },
+  { min: 600,  label: 'Demonologist',  subtitle: 'The creatures know your name.',             color: 'text-gold',           bar: 'from-gold/60 to-gold'                        },
+  { min: 1500, label: 'High Keeper',   subtitle: 'You are the archive.',                      color: 'text-gold',           bar: 'from-gold to-amber-300'                      },
+  { min: 3500, label: 'Void-Touched',  subtitle: 'Something beyond has noticed you.',         color: 'text-crimson',        bar: 'from-crimson/60 to-crimson'                  },
 ]
 
-function getRank(xp: number) {
+export function getRank(xp: number) {
   for (let i = RANKS.length - 1; i >= 0; i--) {
     if (xp >= RANKS[i].min) return RANKS[i]
   }
@@ -37,19 +37,20 @@ export default function XPBadge({ xp, compact = false }: Props) {
     return (
       <span className={`inline-flex items-center gap-1.5 font-ui text-[11px] uppercase tracking-[0.2em] ${rank.color}`}>
         <Zap className="h-3 w-3" />
-        {rank.label} · {xp} XP
+        {rank.label} · {xp.toLocaleString()} XP
       </span>
     )
   }
 
   return (
     <div className="rounded-xl border border-app-border bg-app-surface px-4 py-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="font-ui text-[10px] uppercase tracking-[0.3em] text-parchment-muted mb-0.5">Rank</p>
           <p className={`font-heading text-lg leading-tight ${rank.color}`}>{rank.label}</p>
+          <p className="font-body text-[11px] italic text-parchment-dim/60 mt-0.5 leading-snug">{rank.subtitle}</p>
         </div>
-        <div className="text-right">
+        <div className="text-right shrink-0">
           <p className="font-ui text-[10px] uppercase tracking-[0.3em] text-parchment-muted mb-0.5">XP</p>
           <p className="font-mono text-xl text-parchment">{xp.toLocaleString()}</p>
         </div>
@@ -59,16 +60,20 @@ export default function XPBadge({ xp, compact = false }: Props) {
       <div className="space-y-1">
         <div className="h-1.5 w-full rounded-full bg-void overflow-hidden border border-app-border">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-gold/60 to-gold transition-all duration-500"
+            className={`h-full rounded-full bg-gradient-to-r ${rank.bar} transition-all duration-700`}
             style={{ width: `${progress}%` }}
           />
         </div>
         {next ? (
-          <p className="font-ui text-[10px] text-parchment-dim">
-            {next.min - xp} XP to <span className="text-parchment">{next.label}</span>
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="font-ui text-[10px] text-parchment-dim">
+              {(next.min - xp).toLocaleString()} XP to{' '}
+              <span className="text-parchment">{next.label}</span>
+            </p>
+            <p className="font-ui text-[9px] italic text-parchment-dim/40">{next.subtitle}</p>
+          </div>
         ) : (
-          <p className="font-ui text-[10px] text-gold">Maximum rank achieved.</p>
+          <p className="font-ui text-[10px] text-crimson italic">The archive has no higher designation.</p>
         )}
       </div>
 

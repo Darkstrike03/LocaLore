@@ -64,7 +64,16 @@ export default function CreatureGallery({ creatureId, primaryImage, creatureName
         .insert({ creature_id: creatureId, url, uploaded_by: user.id })
         .select()
         .maybeSingle()
-      if (!error && data) setImages(prev => [...prev, data as CreatureImage])
+      if (!error && data) {
+        setImages(prev => [...prev, data as CreatureImage])
+        // If the creature has no primary image yet, promote this one so cards show it
+        if (!primaryImage) {
+          await supabase
+            .from('creatures')
+            .update({ image_url: url })
+            .eq('id', creatureId)
+        }
+      }
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''

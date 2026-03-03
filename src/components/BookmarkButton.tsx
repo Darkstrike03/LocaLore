@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { awardAnima } from '../lib/anima'
 
 interface Props {
   creatureId: string
@@ -46,21 +47,18 @@ export default function BookmarkButton({ creatureId, compact = false }: Props) {
         .insert({ creature_id: creatureId, user_id: user.id })
       setBookmarked(true)
       setCount(c => c + 1)
-      // award XP to self for saving (+3)
-      await supabase.from('xp_events').insert({
-        user_id: user.id,
-        event_type: 'bookmark_received',
-        xp_amount: 3,
-        reference_id: creatureId,
-      })
-      // Increment XP directly on users table (RPC fallback)
-      const { data: xpRow } = await supabase
-        .from('users')
-        .select('xp')
-        .eq('id', user.id)
-        .maybeSingle()
-      const currentXp = (xpRow as any)?.xp ?? 0
-      await supabase.from('users').update({ xp: currentXp + 3 }).eq('id', user.id)
+      // Award +10 XP for saving to Grimoire — fire-and-forget
+      void (async () => {
+        await supabase.from('xp_events').insert({
+          user_id:      user.id,
+          event_type:   'bookmark_received',
+          xp_amount:    10,
+          reference_id: creatureId,
+        })
+        await supabase.rpc('increment_user_xp', { uid: user.id, amount: 10 })
+      })()
+      // Award anima for saving to Grimoire
+      void awardAnima(user.id, 'bookmark', creatureId)
     }
     setLoading(false)
   }

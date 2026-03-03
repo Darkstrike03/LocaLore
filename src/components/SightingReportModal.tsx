@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { MapPin, X, LocateFixed, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
+import { awardAnima } from '../lib/anima'
 import type { SightingReport } from '../types/creature'
 
 interface Props {
@@ -77,12 +78,13 @@ export default function SightingReportModal({ creatureId, creatureName }: Props)
     setSubmitting(false)
     if (err) { setError(err.message); return }
     if (inserted) setReports(prev => [inserted as SightingReport, ...prev])
-    // award XP
-    await supabase.from('xp_events').insert({ user_id: user.id, event_type: 'sighting_filed', xp_amount: 5, reference_id: creatureId }).then(() => {})
-    // Increment XP directly on users table
-    const { data: xpRow } = await supabase.from('users').select('xp').eq('id', user.id).maybeSingle()
-    const currentXp = (xpRow as any)?.xp ?? 0
-    await supabase.from('users').update({ xp: currentXp + 5 }).eq('id', user.id)
+    // Award +5 XP for filing a sighting
+    void (async () => {
+      await supabase.from('xp_events').insert({ user_id: user.id, event_type: 'sighting_filed', xp_amount: 5, reference_id: creatureId })
+      await supabase.rpc('increment_user_xp', { uid: user.id, amount: 5 })
+    })()
+    // Award anima
+    void awardAnima(user.id, 'sighting_filed', creatureId)
     setDescription(''); setLat(''); setLng('')
   }
 

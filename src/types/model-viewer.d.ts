@@ -21,6 +21,7 @@ declare module 'react' {
         reveal?: 'auto' | 'interaction' | 'manual'
         style?: React.CSSProperties
         class?: string
+        onLoad?: (e: Event) => void
       }
     }
   }
