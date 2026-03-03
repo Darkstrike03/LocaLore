@@ -4,9 +4,9 @@ import { RARITY_META, GRADE_META } from '../../types/cards'
 
 // ─── Size presets ──────────────────────────────────────────────────────────────
 const SIZE = {
-  sm: { w: 'w-[120px]', h: 'h-[168px]', text: 'text-[8px]',  name: 'text-[10px]', img: 88  },
-  md: { w: 'w-[180px]', h: 'h-[252px]', text: 'text-[9px]',  name: 'text-[12px]', img: 130 },
-  lg: { w: 'w-[240px]', h: 'h-[336px]', text: 'text-[10px]', name: 'text-[14px]', img: 175 },
+  sm: { w: 'w-[155px]', h: 'h-[217px]', text: 'text-[8.5px]', name: 'text-[11px]', img: 112 },
+  md: { w: 'w-[200px]', h: 'h-[280px]', text: 'text-[10px]',  name: 'text-[13px]', img: 148 },
+  lg: { w: 'w-[240px]', h: 'h-[336px]', text: 'text-[10px]',  name: 'text-[14px]', img: 175 },
 } as const
 
 // Creature type → display glyph for placeholder art
