@@ -38,6 +38,7 @@ interface CardDisplayProps {
   onClick?: () => void
   className?: string
   animDelay?: number       // ms, for staggered reveal
+  expandText?: boolean     // removes line-clamp & fixed height (used for card downloads)
 }
 
 export default function CardDisplay({
@@ -48,6 +49,7 @@ export default function CardDisplay({
   onClick,
   className = '',
   animDelay = 0,
+  expandText = false,
 }: CardDisplayProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const [imgError, setImgError] = useState(false)
@@ -169,7 +171,7 @@ export default function CardDisplay({
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`group relative select-none ${sz.w} ${sz.h} ${className} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`group relative select-none ${sz.w} ${expandText ? 'h-auto' : sz.h} ${className} ${onClick ? 'cursor-pointer' : ''}`}
       style={{
         animationDelay: `${animDelay}ms`,
         '--rx': '0deg',
@@ -187,7 +189,7 @@ export default function CardDisplay({
       {/* ── Card body ────────────────────────────────────────────────────── */}
       <div
         className={`
-          relative h-full w-full overflow-hidden rounded-lg border bg-[#080810]
+          relative ${expandText ? 'h-auto' : 'h-full'} w-full overflow-hidden rounded-lg border bg-[#080810]
           ${rarity.border}
           ${isEphemeral   ? 'animate-ephemeral-border' : ''}
           ${isVoidTouched ? 'animate-void-glitch' : ''}
@@ -280,7 +282,7 @@ export default function CardDisplay({
 
           {/* Flavor text */}
           {definition.flavor_text && (
-            <p className={`mt-0.5 font-body ${sz.text} text-parchment-muted italic leading-snug line-clamp-2 opacity-70`}>
+            <p className={`mt-0.5 font-body ${sz.text} text-parchment-muted italic leading-snug opacity-70 ${expandText ? '' : 'line-clamp-2'}`}>
               {definition.flavor_text}
             </p>
           )}

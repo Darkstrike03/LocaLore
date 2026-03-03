@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import type { UserCard, CardRarity, CardDefinition } from '../types/cards'
 import { RARITY_META } from '../types/cards'
 import CardDisplay from '../components/cards/CardDisplay'
+import CardDownload from '../components/cards/CardDownload'
 import RarityBadge from '../components/cards/RarityBadge'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
 
@@ -303,7 +304,7 @@ export default function CollectionPage() {
 
       {/* ── Grid view ────────────────────────────────────────────────────── */}
       {viewMode === 'cards' && displayMode === 'grid' && filtered.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2">
           {filtered.map((card, i) => (
             <div key={card.id} className="relative flex justify-center">
               <CardDisplay
@@ -409,6 +410,16 @@ export default function CollectionPage() {
         }
 
         return (
+          <>
+            {/* ── Off-screen card rendered for html2canvas download ── */}
+            <div
+              ref={cardDownloadRef}
+              aria-hidden="true"
+              style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none' }}
+            >
+              <CardDownload card={vc} />
+            </div>
+
           <div
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-sm p-4"
             onClick={e => { if (e.target === e.currentTarget) setViewingCard(null) }}
@@ -416,9 +427,7 @@ export default function CollectionPage() {
             <div className="w-full max-w-sm rounded-2xl border border-app-border bg-app-surface overflow-hidden">
               {/* Card display area */}
               <div className="flex justify-center py-6 bg-gradient-to-b from-void to-app-surface">
-                <div ref={cardDownloadRef} className="inline-block">
-                  <CardDisplay card={vc} size="lg" interactive showGrade />
-                </div>
+                <CardDisplay card={vc} size="lg" interactive showGrade />
               </div>
 
               {/* Info */}
@@ -496,6 +505,7 @@ export default function CollectionPage() {
               </div>
             </div>
           </div>
+          </>
         )
       })()}
       {viewMode === 'collections' && (
