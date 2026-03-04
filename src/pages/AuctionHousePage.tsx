@@ -19,14 +19,29 @@ function useVisible(ref: React.RefObject<Element | null>) {
   return visible
 }
 
-function Countdown({ endsAt }: { endsAt: string }) {
+// Fires the settle Edge Function exactly once when this countdown hits zero.
+// All connected clients race to call it; the function is idempotent so duplicates are harmless.
+function Countdown({ endsAt, auctionId }: { endsAt: string; auctionId: string }) {
   const [remaining, setRemaining] = useState('')
   const [urgent, setUrgent] = useState(false)
+  const settled = useRef(false)
+
+  useEffect(() => {
+    settled.current = false // reset if endsAt changes (snipe extension)
+  }, [endsAt])
 
   useEffect(() => {
     function tick() {
       const diff = new Date(endsAt).getTime() - Date.now()
-      if (diff <= 0) { setRemaining('Ended'); return }
+      if (diff <= 0) {
+        setRemaining('Ended')
+        if (!settled.current) {
+          settled.current = true
+          // Best-effort: fire and forget. Idempotent on the server.
+          supabase.functions.invoke('settle-auction', { body: { auctionId } }).catch(() => {})
+        }
+        return
+      }
       const h = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
       const s = Math.floor((diff % 60000) / 1000)
@@ -36,7 +51,7 @@ function Countdown({ endsAt }: { endsAt: string }) {
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [endsAt])
+  }, [endsAt, auctionId])
 
   return <span className={urgent ? 'text-red-400 animate-auction-pulse' : 'text-parchment-muted'}>{remaining}</span>
 }
@@ -51,10 +66,21 @@ export default function AuctionHousePage() {
   const [bidLoading, setBidLoad]  = useState(false)
   const [balance, setBalance]     = useState(0)
 
-  const s2Ref = useRef<HTMLElement>(null)
-  const s3Ref = useRef<HTMLElement>(null)
-  const s2Vis = useVisible(s2Ref as React.RefObject<Element>)
-  const s3Vis = useVisible(s3Ref as React.RefObject<Element>)
+  const s2Ref    = useRef<HTMLElement>(null)
+  const s3Ref    = useRef<HTMLElement>(null)
+  const s2Vis    = useVisible(s2Ref as React.RefObject<Element>)
+  const s3Vis    = useVisible(s3Ref as React.RefObject<Element>)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
+
+  // Helper: fetch a single listing with all joins
+  const fetchListing = useCallback(async (id: string): Promise<AuctionListing | null> => {
+    const { data } = await supabase
+      .from('auction_listings')
+      .select('*, user_card:user_cards(*, definition:card_definitions(*, creature:creatures(*)))')
+      .eq('id', id)
+      .maybeSingle()
+    return (data as AuctionListing | null)
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -70,43 +96,104 @@ export default function AuctionHousePage() {
     setLoading(false)
   }, [user])
 
+  // Supabase Realtime: keep auctions and bid modal in sync
+  useEffect(() => {
+    if (channelRef.current) supabase.removeChannel(channelRef.current)
+
+    const ch = supabase
+      .channel('auction-house-live')
+      // Existing listing updated (new bid, snipe extension, status change)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'auction_listings' },
+        async (payload) => {
+          const id = (payload.new as { id: string }).id
+          const fresh = await fetchListing(id)
+          if (!fresh) return
+          setAuctions(prev => {
+            if (fresh.status !== 'active') return prev.filter(a => a.id !== id)
+            const idx = prev.findIndex(a => a.id === id)
+            if (idx === -1) return prev
+            const next = [...prev]
+            next[idx] = fresh
+            return next
+          })
+          // Refresh the open bid modal so the user sees the latest price
+          setSelected(prev => prev?.id === id ? fresh : prev)
+        },
+      )
+      // Brand-new listing goes live
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'auction_listings' },
+        async (payload) => {
+          const id = (payload.new as { id: string; status: string }).id
+          if ((payload.new as { status: string }).status !== 'active') return
+          const fresh = await fetchListing(id)
+          if (fresh) setAuctions(prev =>
+            [...prev, fresh].sort((a, b) => new Date(a.ends_at).getTime() - new Date(b.ends_at).getTime())
+          )
+        },
+      )
+      .subscribe()
+
+    channelRef.current = ch
+    return () => { supabase.removeChannel(ch) }
+  }, [fetchListing])
+
   useEffect(() => { void load() }, [load])
+
+  // Re-sync user balance from server after a bid lands (ours or someone else's)
+  useEffect(() => {
+    if (!user) return
+    const balCh = supabase
+      .channel('user-balance-live')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
+        (payload) => {
+          const u = payload.new as { anima_balance: number }
+          if (u.anima_balance !== undefined) setBalance(u.anima_balance)
+        },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(balCh) }
+  }, [user])
 
   async function placeBid() {
     if (!user || !selected) return
     const amount = parseInt(bidAmount, 10)
     if (!amount || amount <= 0) { setBidError('Enter a valid bid amount.'); return }
-    const minBid = (selected.current_bid_anima ?? selected.starting_bid_anima) + 1
-    if (amount < minBid) { setBidError(`Minimum bid is ${formatPrice(minBid)}`); return }
+
+    // Fetch the freshest listing to guard against stale state
+    const fresh = await fetchListing(selected.id)
+    if (!fresh || fresh.status !== 'active') { setBidError('This auction has already ended.'); setBidLoad(false); return }
+
+    const minBid = (fresh.current_bid_anima ?? fresh.starting_bid_anima) + 1
+    if (amount < minBid) { setBidError(`Minimum bid is now ${formatPrice(minBid)}`); return }
     if (amount > balance) { setBidError('Insufficient anima.'); return }
 
     setBidLoad(true)
     setBidError(null)
 
-    // Snipe protection: extend by 5 min if bid in last 5 min
-    const endsAt = new Date(selected.ends_at)
-    const now = new Date()
-    const msLeft = endsAt.getTime() - now.getTime()
-    const newEndsAt = msLeft < 300_000
-      ? new Date(now.getTime() + 300_000).toISOString()
-      : selected.ends_at
+    // Use RPC for atomic bid: refunds previous bidder, deducts from new bidder, handles snipe extension
+    const { error } = await supabase.rpc('place_auction_bid', {
+      p_auction_id: selected.id,
+      p_amount:     amount,
+    })
 
-    await supabase.from('auction_bids').insert({ auction_id: selected.id, bidder_id: user.id, amount_anima: amount })
-    await supabase.from('auction_listings').update({
-      current_bid_anima: amount,
-      current_bidder_id: user.id,
-      ends_at: newEndsAt,
-      ...(msLeft < 300_000 ? { snipe_extended_at: now.toISOString() } : {}),
-    }).eq('id', selected.id)
-
-    // Soft-reserve balance (optimistic)
-    await supabase.from('users').update({ anima_balance: balance - amount }).eq('id', user.id)
-    setBalance(balance - amount)
+    if (error) {
+      setBidError(error.message)
+      setBidLoad(false)
+      return
+    }
 
     setSelected(null)
     setBidAmount('')
     setBidLoad(false)
-    void load()
+    // Realtime will update the listings; also refresh balance
+    const { data: u } = await supabase.from('users').select('anima_balance').eq('id', user.id).maybeSingle()
+    if (u) setBalance(u.anima_balance)
   }
 
   const featured = auctions.slice(0, 2)
@@ -181,7 +268,7 @@ export default function AuctionHousePage() {
                     </div>
                     <div className="flex items-center gap-1.5 justify-center">
                       <Clock className="h-3 w-3 text-parchment-muted" />
-                      <span className="font-ui text-[11px]"><Countdown endsAt={a.ends_at} /></span>
+                      <span className="font-ui text-[11px]"><Countdown endsAt={a.ends_at} auctionId={a.id} /></span>
                     </div>
                     <button
                       type="button"
@@ -230,7 +317,7 @@ export default function AuctionHousePage() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Clock className="h-3 w-3 text-parchment-muted" />
-                        <span className="font-ui text-[10px]"><Countdown endsAt={a.ends_at} /></span>
+                        <span className="font-ui text-[10px]"><Countdown endsAt={a.ends_at} auctionId={a.id} /></span>
                       </div>
                       {a.snipe_extended_at && (
                         <div className="flex items-center gap-1">
@@ -269,7 +356,7 @@ export default function AuctionHousePage() {
                 <p className="font-ui text-[10px] text-parchment-muted">Current: <span className="text-amber-400">{formatPrice(selected.current_bid_anima ?? selected.starting_bid_anima)}</span></p>
                 <div className="flex items-center gap-1.5">
                   <Clock className="h-3 w-3 text-parchment-muted" />
-                  <span className="font-ui text-[10px]"><Countdown endsAt={selected.ends_at} /></span>
+                  <span className="font-ui text-[10px]"><Countdown endsAt={selected.ends_at} auctionId={selected.id} /></span>
                 </div>
                 {selected.snipe_extended_at && (
                   <p className="font-ui text-[9px] text-amber-400">⚡ Snipe protection active</p>

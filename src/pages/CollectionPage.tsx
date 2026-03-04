@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import html2canvas from 'html2canvas'
 import { useParams } from 'react-router-dom'
-import { Eye, LayoutGrid, List, Tag, ArrowUpDown, Filter, Bookmark, Globe } from 'lucide-react'
+import { Eye, LayoutGrid, List, Tag, ArrowUpDown, Filter, Bookmark, Globe, Gavel } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { UserCard, CardRarity, CardDefinition } from '../types/cards'
@@ -44,6 +44,11 @@ export default function CollectionPage() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('grid')
   const [listingCard, setListingCard]  = useState<UserCard | null>(null)
   const [listPrice, setListPrice]      = useState('')
+  const [auctionCard, setAuctionCard]  = useState<UserCard | null>(null)
+  const [auctionStartBid, setAuctionStartBid] = useState('')
+  const [auctionDuration, setAuctionDuration] = useState('24')
+  const [auctionError, setAuctionError] = useState<string | null>(null)
+  const [auctionLoading, setAuctionLoading] = useState(false)
   const [viewingCard, setViewingCard]  = useState<(UserCard & { definition: NonNullable<UserCard['definition']> }) | null>(null)
   const [viewMode, setViewMode]        = useState<'cards' | 'collections'>('cards')
   const [allDefs, setAllDefs]          = useState<CardDefinition[]>([])
@@ -166,6 +171,29 @@ export default function CollectionPage() {
     setListingCard(null)
     setListPrice('')
     // Invalidate cache so the updated listing state is shown immediately
+    if (user) CARDS_CACHE.delete(`localore_cards_${user.id}`)
+    void load(true)
+  }
+
+  // ── List for auction ───────────────────────────────────────────────────
+  async function listForAuction() {
+    if (!auctionCard || !user) return
+    const startBid = parseInt(auctionStartBid, 10)
+    if (!startBid || startBid <= 0) { setAuctionError('Starting bid must be greater than 0.'); return }
+    const hours = parseInt(auctionDuration, 10)
+    if (!hours || hours <= 0) { setAuctionError('Invalid duration.'); return }
+    setAuctionLoading(true)
+    setAuctionError(null)
+    const endsAt = new Date(Date.now() + hours * 3_600_000).toISOString()
+    const { error } = await supabase
+      .from('auction_listings')
+      .insert({ seller_id: user.id, user_card_id: auctionCard.id, starting_bid_anima: startBid, ends_at: endsAt })
+    if (error) { setAuctionError(error.message); setAuctionLoading(false); return }
+    await supabase.from('user_cards').update({ is_listed_auction: true }).eq('id', auctionCard.id)
+    setAuctionCard(null)
+    setAuctionStartBid('')
+    setAuctionDuration('24')
+    setAuctionLoading(false)
     if (user) CARDS_CACHE.delete(`localore_cards_${user.id}`)
     void load(true)
   }
@@ -322,6 +350,12 @@ export default function CollectionPage() {
                   <span className="font-ui text-[8px] text-gold uppercase tracking-[0.15em]">Listed</span>
                 </div>
               )}
+              {card.is_listed_auction && (
+                <div className="absolute top-2 left-2 flex items-center gap-1 rounded bg-amber-500/20 border border-amber-500/40 px-1.5 py-0.5">
+                  <Gavel className="h-2.5 w-2.5 text-amber-400" />
+                  <span className="font-ui text-[8px] text-amber-400 uppercase tracking-[0.15em]">Auction</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -352,15 +386,25 @@ export default function CollectionPage() {
               <span className="font-ui text-[10px] text-parchment-muted hidden sm:block">
                 #{card.serial_number}
               </span>
-              {isOwn && !card.is_listed_market && (
-                <button
-                  type="button"
-                  onClick={() => setListingCard(card)}
-                  className="flex items-center gap-1 rounded border border-app-border px-2 py-1 font-ui text-[10px] text-parchment-muted hover:border-gold/40 hover:text-gold transition-colors"
-                >
-                  <Tag className="h-3 w-3" />
-                  List
-                </button>
+              {isOwn && !card.is_listed_market && !card.is_listed_auction && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setListingCard(card) }}
+                    className="flex items-center gap-1 rounded border border-app-border px-2 py-1 font-ui text-[10px] text-parchment-muted hover:border-gold/40 hover:text-gold transition-colors"
+                  >
+                    <Tag className="h-3 w-3" />
+                    Sell
+                  </button>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setAuctionCard(card); setAuctionStartBid(''); setAuctionError(null) }}
+                    className="flex items-center gap-1 rounded border border-app-border px-2 py-1 font-ui text-[10px] text-parchment-muted hover:border-amber-500/40 hover:text-amber-400 transition-colors"
+                  >
+                    <Gavel className="h-3 w-3" />
+                    Bid
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -511,20 +555,37 @@ export default function CollectionPage() {
                   </button>
 
                   {/* List for sale (own cards only) */}
-                  {isOwn && !vc.is_listed_market && (
+                  {isOwn && !vc.is_listed_market && !vc.is_listed_auction && (
                     <button
                       type="button"
                       onClick={() => { setViewingCard(null); setListingCard(vc) }}
-                      className="col-span-2 flex items-center justify-center gap-2 rounded-lg border border-gold/30 bg-gold/10 px-3 py-2.5 font-ui text-[11px] uppercase tracking-[0.15em] text-gold hover:bg-gold/20 transition-colors"
+                      className="flex items-center justify-center gap-2 rounded-lg border border-gold/30 bg-gold/10 px-3 py-2.5 font-ui text-[11px] uppercase tracking-[0.15em] text-gold hover:bg-gold/20 transition-colors"
                     >
                       <Tag className="h-3.5 w-3.5" />
                       List for Sale
+                    </button>
+                  )}
+                  {/* List for auction (own cards only) */}
+                  {isOwn && !vc.is_listed_market && !vc.is_listed_auction && (
+                    <button
+                      type="button"
+                      onClick={() => { setViewingCard(null); setAuctionCard(vc); setAuctionStartBid(''); setAuctionError(null) }}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-900/10 px-3 py-2.5 font-ui text-[11px] uppercase tracking-[0.15em] text-amber-400 hover:bg-amber-900/20 transition-colors"
+                    >
+                      <Gavel className="h-3.5 w-3.5" />
+                      List for Auction
                     </button>
                   )}
                   {isOwn && vc.is_listed_market && (
                     <div className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg border border-gold/20 bg-gold/5 px-3 py-2 font-ui text-[10px] text-gold/70">
                       <Tag className="h-3 w-3" />
                       Listed on the Market
+                    </div>
+                  )}
+                  {isOwn && vc.is_listed_auction && (
+                    <div className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-900/10 px-3 py-2 font-ui text-[10px] text-amber-400/70">
+                      <Gavel className="h-3 w-3" />
+                      In Auction
                     </div>
                   )}
                 </div>
@@ -634,6 +695,73 @@ export default function CollectionPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── List for auction modal ───────────────────────────────────────── */}
+      {auctionCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-xl border border-amber-400/30 bg-app-surface p-6 space-y-4">
+            <h3 className="font-heading text-lg text-amber-400">List for Auction</h3>
+            <p className="font-body text-sm text-parchment-muted">
+              Start a timed auction for{' '}
+              <strong className="text-parchment">{auctionCard.definition?.creature?.name}</strong>.
+              The card is locked until the auction ends.
+            </p>
+            <div>
+              <label className="font-ui text-[10px] uppercase tracking-[0.2em] text-parchment-muted block mb-1.5">
+                Starting Bid (Anima ⬡)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={auctionStartBid}
+                onChange={e => setAuctionStartBid(e.target.value)}
+                placeholder="e.g. 100"
+                className="w-full rounded border border-app-border bg-void px-3 py-2 font-ui text-sm text-parchment focus:border-amber-400/40 focus:outline-none"
+              />
+              {auctionStartBid && parseInt(auctionStartBid) > 0 && (
+                <p className="mt-1 font-ui text-[10px] text-parchment-muted">
+                  ≈ <CurrencyBadge anima={parseInt(auctionStartBid)} size="xs" />
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="font-ui text-[10px] uppercase tracking-[0.2em] text-parchment-muted block mb-1.5">
+                Duration
+              </label>
+              <select
+                value={auctionDuration}
+                onChange={e => setAuctionDuration(e.target.value)}
+                className="w-full rounded border border-app-border bg-void px-3 py-2 font-ui text-sm text-parchment focus:border-amber-400/40 focus:outline-none"
+              >
+                <option value="1">1 hour</option>
+                <option value="6">6 hours</option>
+                <option value="12">12 hours</option>
+                <option value="24">24 hours</option>
+                <option value="72">3 days</option>
+                <option value="168">7 days</option>
+              </select>
+            </div>
+            {auctionError && <p className="text-xs text-red-400">{auctionError}</p>}
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => void listForAuction()}
+                disabled={auctionLoading}
+                className="flex-1 rounded-lg border border-amber-500/40 bg-amber-900/20 py-2 font-ui text-[11px] uppercase tracking-[0.2em] text-amber-400 hover:bg-amber-900/40 disabled:opacity-50 transition-colors"
+              >
+                {auctionLoading ? 'Listing...' : 'Start Auction'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuctionCard(null); setAuctionError(null) }}
+                className="rounded-lg border border-app-border px-4 py-2 font-ui text-[11px] text-parchment-muted hover:border-parchment-muted/40 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

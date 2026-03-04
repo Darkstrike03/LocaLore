@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, forwardRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Users, Tag, Gavel, ArrowRightLeft, TrendingUp, Sparkles } from 'lucide-react'
+import { Eye, Users, Tag, Gavel, ArrowRightLeft, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import type { CardRarity } from '../types/cards'
 import { RARITY_META } from '../types/cards'
@@ -31,6 +31,110 @@ function useVisible(ref: React.RefObject<Element | null>) {
     return () => obs.disconnect()
   }, [ref])
   return visible
+}
+
+// ── Pure-CSS mysterious hooded figure ──────────────────────────────────────
+function HoodedFigure({ className = '' }: { className?: string }) {
+  return (
+    <>
+      <style>{`
+        @keyframes hf-float {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-14px); }
+        }
+        @keyframes hf-eye-pulse {
+          0%, 100% { opacity: 1;   box-shadow: 0 0 8px 3px rgba(251,191,36,0.8); }
+          50%       { opacity: 0.5; box-shadow: 0 0 3px 1px rgba(251,191,36,0.3); }
+        }
+        @keyframes hf-mist {
+          0%, 100% { opacity: 0.18; transform: scaleX(1); }
+          50%       { opacity: 0.28; transform: scaleX(1.06); }
+        }
+        .hf-eye { animation: hf-eye-pulse 3s ease-in-out infinite; }
+        .hf-eye:nth-child(2) { animation-delay: 0.4s; }
+        .hf-mist { animation: hf-mist 5s ease-in-out infinite; }
+      `}</style>
+
+      <div
+        className={`pointer-events-none select-none flex flex-col items-center ${className}`}
+        style={{ animation: 'hf-float 7s ease-in-out infinite' }}
+      >
+        {/* Hood */}
+        <div style={{
+          width: 90,
+          height: 80,
+          borderRadius: '50% 50% 12px 12px',
+          background: 'linear-gradient(160deg, #07070d 20%, #13131f 100%)',
+          border: '1px solid rgba(200,168,75,0.12)',
+          boxShadow: '0 0 40px rgba(0,0,0,0.9), inset 0 -10px 24px rgba(200,168,75,0.04)',
+          position: 'relative',
+          zIndex: 2,
+        }}>
+          {/* Deep shadow face */}
+          <div style={{
+            position: 'absolute', inset: '20% 15% 0',
+            borderRadius: '50% 50% 40% 40%',
+            background: 'radial-gradient(ellipse at 50% 40%, #0a0a10 60%, transparent 100%)',
+          }} />
+          {/* Eyes */}
+          <div style={{ position: 'absolute', bottom: 22, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 18 }}>
+            <div className="hf-eye" style={{ width: 7, height: 4, borderRadius: '50%', background: 'rgba(251,191,36,0.95)' }} />
+            <div className="hf-eye" style={{ width: 7, height: 4, borderRadius: '50%', background: 'rgba(251,191,36,0.95)' }} />
+          </div>
+        </div>
+
+        {/* Neck */}
+        <div style={{
+          width: 28,
+          height: 12,
+          background: '#09090e',
+          marginTop: -3,
+          zIndex: 1,
+        }} />
+
+        {/* Shoulders mantle */}
+        <div style={{
+          width: 130,
+          height: 22,
+          background: 'linear-gradient(180deg, #0e0e18 0%, #0a0a12 100%)',
+          borderRadius: '50% 50% 0 0',
+          marginTop: -4,
+          zIndex: 1,
+          border: '1px solid rgba(200,168,75,0.08)',
+          borderBottom: 'none',
+        }} />
+
+        {/* Cloak body */}
+        <div style={{
+          width: 160,
+          height: 130,
+          background: 'linear-gradient(180deg, #0c0c16 0%, #06060c 100%)',
+          clipPath: 'polygon(22% 0%, 78% 0%, 100% 100%, 0% 100%)',
+          marginTop: -2,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.95)',
+          zIndex: 0,
+        }} />
+
+        {/* Hem / base fade */}
+        <div style={{
+          width: 160,
+          height: 20,
+          background: 'linear-gradient(180deg, #06060c 0%, transparent 100%)',
+          marginTop: -2,
+        }} />
+
+        {/* Ground mist */}
+        <div className="hf-mist" style={{
+          width: 220,
+          height: 24,
+          borderRadius: '50%',
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(200,168,75,0.25) 0%, transparent 70%)',
+          marginTop: -10,
+          filter: 'blur(8px)',
+        }} />
+      </div>
+    </>
+  )
 }
 
 const Scene = forwardRef<HTMLElement, { children: React.ReactNode; className?: string }>(
@@ -130,6 +234,11 @@ export default function CommunityHubPage() {
         <div className="pointer-events-none absolute inset-0 opacity-5"
           style={{ backgroundImage: 'linear-gradient(rgba(200,168,75,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(200,168,75,0.3) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
+        {/* Hooded figure — left side */}
+        <HoodedFigure className="absolute bottom-0 left-[8%] opacity-60" />
+        {/* Hooded figure — right side, slightly smaller / delayed */}
+        <HoodedFigure className="absolute bottom-0 right-[8%] opacity-40" />
+
         <div className="relative z-10 flex flex-col items-center gap-6 px-6 text-center">
           <span className="relative flex h-16 w-16 items-center justify-center">
             <span className="absolute inset-0 rounded-full border border-gold/30 animate-glow-pulse" style={{ animationDuration: '2s' }} />
@@ -215,25 +324,56 @@ export default function CommunityHubPage() {
             <h2 className="font-heading text-3xl tracking-[0.12em] text-gold">Top Collectors</h2>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {collectors.slice(0, 6).map((c, i) => (
-              <Link
-                key={c.user_id}
-                to={`/collection/${c.username ?? c.user_id}`}
-                className="flex items-center gap-3 rounded-lg border border-app-border bg-app-surface px-4 py-3 hover:border-gold/30 transition-colors"
-              >
-                <span className="font-heading text-lg text-parchment-muted/40 w-6 text-center">{i + 1}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-heading text-sm text-parchment truncate">{c.display_name ?? c.username ?? 'Archivist'}</p>
-                  <p className="font-ui text-[10px] text-parchment-muted">{c.card_count} manifests</p>
-                </div>
-                <TrendingUp className="h-3.5 w-3.5 text-parchment-muted/40" />
-              </Link>
-            ))}
-            {collectors.length === 0 && (
-              <p className="col-span-2 text-center font-body text-parchment-muted py-8">No collectors on record yet. Be the first.</p>
-            )}
-          </div>
+          {collectors.length === 0 ? (
+            <p className="text-center font-body text-parchment-muted py-8">No collectors on record yet. Be the first.</p>
+          ) : (
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gold/20">
+                  <th className="w-10 pb-2 font-ui text-[9px] uppercase tracking-[0.3em] text-parchment-muted/50 text-center">#</th>
+                  <th className="pb-2 font-ui text-[9px] uppercase tracking-[0.3em] text-parchment-muted/50 text-left pl-3">Archivist</th>
+                  <th className="pb-2 font-ui text-[9px] uppercase tracking-[0.3em] text-parchment-muted/50 text-right pr-2">Manifests</th>
+                </tr>
+              </thead>
+              <tbody>
+                {collectors.slice(0, 8).map((c, i) => (
+                  <tr
+                    key={c.user_id}
+                    className="group border-b border-app-border/60 hover:bg-gold/5 transition-colors"
+                  >
+                    <td className="py-2.5 text-center">
+                      {i < 3 ? (
+                        <span className={`font-heading text-sm ${
+                          i === 0 ? 'text-amber-400' : i === 1 ? 'text-[#C8D8E4]' : 'text-amber-700'
+                        }`}>{i + 1}</span>
+                      ) : (
+                        <span className="font-heading text-sm text-parchment-muted/30">{i + 1}</span>
+                      )}
+                    </td>
+                    <td className="py-2.5 pl-3">
+                      <Link
+                        to={`/collection/${c.username ?? c.user_id}`}
+                        className="flex items-center gap-2 min-w-0"
+                      >
+                        {/* Avatar glyph */}
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-app-border bg-void text-[10px] text-parchment-muted/60 group-hover:border-gold/30 transition-colors">
+                          {(c.display_name ?? c.username ?? 'A')[0].toUpperCase()}
+                        </span>
+                        <span className="font-heading text-sm text-parchment truncate group-hover:text-gold transition-colors">
+                          {c.display_name ?? c.username ?? 'Archivist'}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="py-2.5 pr-2 text-right">
+                      <span className="font-ui text-xs text-parchment-muted tabular-nums">
+                        {c.card_count.toLocaleString()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </Scene>
 
