@@ -10,6 +10,7 @@ import { uploadImage } from '../lib/imgbb'
 import { slugify } from '../lib/slugify'
 import { useAuth } from '../context/AuthContext'
 import type { CreatureType } from '../types/creature'
+import { useSEO } from '../hooks/useSEO'
 
 const WORLD_CENTER: [number, number] = [25, 20]
 
@@ -42,6 +43,11 @@ const LABEL = 'mb-1.5 block font-ui text-[11px] uppercase tracking-[0.2em] text-
 const TA    = 'input-forge resize-none'
 
 function SubmitCreaturePage() {
+  useSEO({
+    title: 'Submit a Creature',
+    description: 'Submit a folklore creature, spirit, or local legend to the LocaLore archive. Share your knowledge and contribute to the global bestiary.',
+    url: '/submit',
+  })
   const { user, loading, openAuthModal } = useAuth()
 
   const [name, setName]                     = useState('')

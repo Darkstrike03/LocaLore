@@ -1,0 +1,41 @@
+# LocaLore — LLM Content Index
+# https://llmstxt.org — Machine-readable site guide for AI agents and LLMs
+
+## About LocaLore
+
+LocaLore (https://localore.vercel.app) is a living bestiary and interactive world map of folklore creatures, yokai, spirits, demons, and local legends. It is a community-driven archive where users submit creature entries, file sighting reports, and collectively build a global record of cryptids, mythological entities, and oral tradition.
+
+The project is not fictional — it treats folklore as cultural memory and presents entries as documented accounts from tradition and community witness.
+
+## What the site contains
+
+- **Creature library**: Detailed profiles of folklore creatures from around the world — origin stories, abilities, danger ratings, survival tips, regional context, and user-submitted witness accounts
+- **Interactive world map**: Geolocated creature pins across a global map showing where each entity originates or has been sighted
+- **User accounts and XP system**: Community members earn experience (XP) and Anima currency by submitting creatures, filing sightings, and engaging with entries
+- **Creature cards**: Collectible trading cards of archive entries with rarity tiers (whisper, remnant, bound, gilded, awakened, ephemeral, void-touched)
+- **Marketplace and auction house**: Community trading of creature cards using Anima currency
+- **Grimoire**: A book-style personal journal of bookmarked creatures
+
+## Key entities documented
+
+Yokai (Japan), Rakshasa (India), Kitsune (Japan), Oni (Japan), Kappa (Japan), Baba Yaga (Slavic), Strigoi (Romanian), Leshy (Slavic), Nuckelavee (Scottish/Orcadian), Gumiho (Korean), Dokkaebi (Korean), Yuki-onna (Japan), Pixiu (Chinese), Vetala (Hindu), Jiangshi (Chinese), and many more.
+
+## Content policies
+
+- Unverified entries are clearly labelled
+- AI-collected entries are tagged with source type
+- Moderators review submissions before verification
+- All entries are folklore records, not claims of literal existence
+
+## Canonical URLs
+
+- Homepage: https://localore.vercel.app/
+- Creature library: https://localore.vercel.app/library
+- Interactive map: https://localore.vercel.app/map
+- Submit a creature: https://localore.vercel.app/submit
+- About: https://localore.vercel.app/about
+- Creature profiles: https://localore.vercel.app/creatures/{slug}
+
+## Contact
+
+Email: otakuslibrary75@gmail.com

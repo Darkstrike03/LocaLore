@@ -27,14 +27,58 @@ function CreatureProfilePage() {
   const [galleryFirstImage, setGalleryFirstImage] = useState<string | null>(null)
 
   // Dynamic SEO
+  const creatureDesc = creature
+    ? `${creature.name} — ${creature.creature_type.replace('_', ' ')} from ${creature.region ?? creature.country ?? 'the world'}. ${creature.description?.slice(0, 100)}`
+    : undefined
+
   useSEO({
     title: creature?.name,
-    description: creature
-      ? `${creature.name} — ${creature.creature_type.replace('_', ' ')} from ${creature.region ?? creature.country ?? 'the world'}. ${creature.description?.slice(0, 120)}…`
-      : undefined,
+    description: creatureDesc,
     image: creature?.image_url,
     url: creature ? `/creatures/${creature.slug}` : undefined,
     type: 'article',
+    structuredData: creature
+      ? [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: creature.name,
+            description: creatureDesc,
+            image: creature.image_url ?? 'https://localore.vercel.app/og-image.jpg',
+            url: `https://localore.vercel.app/creatures/${creature.slug}`,
+            datePublished: creature.created_at,
+            dateModified: creature.updated_at,
+            author: { '@type': 'Organization', name: 'LocaLore' },
+            publisher: {
+              '@type': 'Organization',
+              name: 'LocaLore',
+              url: 'https://localore.vercel.app',
+            },
+            keywords: [
+              creature.creature_type.replace('_', ' '),
+              creature.region ?? '',
+              creature.country ?? '',
+              'folklore',
+              'mythology',
+            ].filter(Boolean).join(', '),
+            // Speakable — enables voice search / AEO
+            speakable: {
+              '@type': 'SpeakableSpecification',
+              cssSelector: ['h1', '.creature-description'],
+            },
+          },
+          // BreadcrumbList — SXO / GEO entity trail
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'LocaLore', item: 'https://localore.vercel.app/' },
+              { '@type': 'ListItem', position: 2, name: 'Library', item: 'https://localore.vercel.app/library' },
+              { '@type': 'ListItem', position: 3, name: creature.name, item: `https://localore.vercel.app/creatures/${creature.slug}` },
+            ],
+          },
+        ]
+      : undefined,
   })
 
   useEffect(() => {

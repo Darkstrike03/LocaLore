@@ -1,0 +1,22 @@
+{
+  "name": "LocaLore — Global Folklore & Creature Atlas",
+  "short_name": "LocaLore",
+  "description": "A living bestiary of folklore creatures, yokai, spirits, and monsters from around the world.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#050507",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "https://localore.vercel.app/og-image.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "entertainment", "lifestyle"],
+  "screenshots": [],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

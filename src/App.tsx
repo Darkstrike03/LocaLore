@@ -30,6 +30,7 @@ const AuctionHousePage    = lazy(() => import('./pages/AuctionHousePage'))
 const TradePage           = lazy(() => import('./pages/TradePage'))
 const PresentCardPage     = lazy(() => import('./pages/PresentCardPage'))
 const ScanTradePage       = lazy(() => import('./pages/ScanTradePage'))
+const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
 
 const navItems = [
   { to: '/map',         icon: MapPin,     label: 'Map' },
@@ -356,6 +357,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </Suspense>
       </main>
@@ -368,11 +370,11 @@ function App() {
         <p className="mt-1 font-ui text-[10px] text-parchment-muted/50">
           All entries are fragments of collective memory. Tread carefully.
         </p>
-        <nav className="mt-3 flex items-center justify-center gap-4">
-          <a href="/about" className="text-parchment-muted hover:text-parchment">About</a>
-          <a href="/privacy" className="text-parchment-muted hover:text-parchment">Privacy</a>
-          <a href="/terms" className="text-parchment-muted hover:text-parchment">Terms</a>
-          <a href="/contact" className="text-parchment-muted hover:text-parchment">Contact</a>
+        <nav className="mt-3 flex items-center justify-center gap-4" aria-label="Footer navigation">
+          <NavLink to="/about" className="text-parchment-muted hover:text-parchment">About</NavLink>
+          <NavLink to="/privacy" className="text-parchment-muted hover:text-parchment">Privacy</NavLink>
+          <NavLink to="/terms" className="text-parchment-muted hover:text-parchment">Terms</NavLink>
+          <NavLink to="/contact" className="text-parchment-muted hover:text-parchment">Contact</NavLink>
         </nav>
       </footer>}
     </div>

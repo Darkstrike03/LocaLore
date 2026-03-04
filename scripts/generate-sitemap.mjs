@@ -23,7 +23,7 @@ async function fetchRows(table, select) {
 }
 
 async function main() {
-  const base = process.env.PUBLIC_URL ?? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://localore.vercel.app'
+  const base = process.env.PUBLIC_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://localore.vercel.app')
 
   // get creature slugs
   const creatures = await fetchRows('creatures', 'slug')

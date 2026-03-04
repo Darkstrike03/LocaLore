@@ -4,6 +4,7 @@ import { Eye, Zap, Crown, Trophy, User } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { getRank } from '../components/XPBadge'
 import { useAuth } from '../context/AuthContext'
+import { useSEO } from '../hooks/useSEO'
 
 interface Leader {
   id: string
@@ -45,6 +46,11 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LeaderboardPage() {
+  useSEO({
+    title: 'Order of the Witnessed',
+    description: 'The LocaLore leaderboard — see the most experienced folklore witnesses ranked by XP earned through submissions, sightings, and community contributions.',
+    url: '/leaderboard',
+  })
   const { user } = useAuth()
   const [leaders, setLeaders] = useState<Leader[]>([])
   const [selfRank, setSelfRank] = useState<{ pos: number; xp: number } | null>(null)

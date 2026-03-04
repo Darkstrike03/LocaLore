@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import type { Creature } from '../types/creature'
+import { useSEO } from '../hooks/useSEO'
 
 // â”€â”€â”€ IntersectionObserver hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useVisible(threshold = 0.35) {
@@ -111,6 +112,43 @@ function CreatureCard({ creature, delay }: { creature: Creature; delay: number }
 
 // â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function LandingPage() {
+  useSEO({
+    title: 'Global Folklore & Creature Atlas',
+    description: 'Explore a living bestiary of folklore creatures, yokai, spirits, and monsters from around the world. Submit sightings, discover legends, and map the unknown.',
+    url: '/',
+    structuredData: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'What is LocaLore?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'LocaLore is a free, community-driven bestiary and interactive world map of folklore creatures — including yokai, spirits, demons, cryptids, and local legends from every culture. Users can explore entries, submit new creatures, and file sighting reports.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'What folklore creatures are on LocaLore?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'LocaLore documents creatures from global folklore including the Kitsune and Oni (Japan), Baba Yaga (Slavic), Strigoi (Romania), Rakshasa and Vetala (India), Kappa and Yuki-onna (Japan), Dokkaebi and Gumiho (Korea), Leshy (Slavic), Nuckelavee (Orcadian), and many more.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Is LocaLore free to use?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Yes. LocaLore is free to browse. Creating an account (also free) lets you submit creatures, file sighting reports, earn XP, and collect folklore creature cards.',
+            },
+          },
+        ],
+      },
+    ],
+  })
   const [stats, setStats] = useState({ creatures: 0, sightings: 0, witnesses: 0 })
   const [recent, setRecent] = useState<Creature[]>([])
 

@@ -1,96 +1,218 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!--  Static / evergreen pages  -->
+  <url>
+    <loc>https://localore.vercel.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/library</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/leaderboard</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/hub</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/market</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/auction</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+  <url>
+    <loc>https://localore.vercel.app/contact</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+    <lastmod>2026-03-05</lastmod>
+  </url>
+
+  <!--  Creature profiles  -->
   <url>
     <loc>https://localore.vercel.app/creatures/baba-yaga</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/baku</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/brahmodaitya</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/dokkaebi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/doyen</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/gumiho</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/hundun</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/jiangshi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://localore.vercel.app/creatures/jorōgumo</loc>
+    <loc>https://localore.vercel.app/creatures/jor%C5%8Dgumo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/kappa</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/kitsune</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/leshy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/mechho-bhoot</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/nagaraja</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/nishi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/nuckelavee</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/nue</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/oni</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/pishacha</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/pixiu</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/raijin</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/rakshasa</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/shakchunni</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/strigoi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/tanish-kami</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/tanuki</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/vetala</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/werwolf</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/yaksha</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://localore.vercel.app/creatures/yuki-onna</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
-  <url>
-    <loc>https://localore.vercel.app/profile/iammoderator</loc>
-  </url>
+
 </urlset>

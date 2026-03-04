@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabaseClient'
 import type { CardRarity } from '../types/cards'
 import { RARITY_META } from '../types/cards'
 import { formatPrice } from '../lib/currency'
+import { useSEO } from '../hooks/useSEO'
 
 interface ActivityItem {
   activity_type: 'sale' | 'trade'
@@ -152,6 +153,11 @@ const Scene = forwardRef<HTMLElement, { children: React.ReactNode; className?: s
 )
 
 export default function CommunityHubPage() {
+  useSEO({
+    title: 'Community Hub',
+    description: 'The LocaLore Community Hub — see live card market activity, top collectors, and community highlights from the folklore trading community.',
+    url: '/hub',
+  })
   const [activity, setActivity]     = useState<ActivityItem[]>([])
   const [collectors, setCollectors] = useState<TopCollector[]>([])
   const [stats, setStats]           = useState({ cards: 0, traders: 0, volume: 0 })

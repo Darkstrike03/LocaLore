@@ -1,4 +1,11 @@
+import { useSEO } from '../hooks/useSEO'
+
 function TermsPage() {
+  useSEO({
+    title: 'Terms of Service',
+    description: 'LocaLore terms of service — acceptable use, content ownership, and limitations governing your use of the folklore archive.',
+    url: '/terms',
+  })
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 animate-rise">
       <header className="mb-6">

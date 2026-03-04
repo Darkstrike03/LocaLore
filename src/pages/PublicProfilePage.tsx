@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { Eye } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
 
 function PublicProfilePage() {
   const { username } = useParams<{ username: string }>()
   const [profile, setProfile] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
+
+  useSEO({
+    title: profile ? `${profile.display_name || profile.username}'s Profile` : username ? `@${username}` : 'Witness Profile',
+    description: profile
+      ? `View ${profile.display_name || profile.username}'s LocaLore profile — their collected creatures, sightings, and folklore archive contributions.`
+      : 'Explore a witness profile on LocaLore.',
+    url: username ? `/profile/${username}` : undefined,
+  })
 
   useEffect(() => {
     if (!username) { setLoading(false); return }

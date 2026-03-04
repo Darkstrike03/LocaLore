@@ -10,6 +10,7 @@ import CreatureOfTheRite from '../components/CreatureOfTheRite'
 import RecentlyWitnessed from '../components/RecentlyWitnessed'
 import type { Creature } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
+import { useSEO } from '../hooks/useSEO'
 
 const WORLD_CENTER: [number, number] = [25, 20]
 
@@ -74,6 +75,11 @@ const SECTION_ICONS: Record<string, React.ReactNode> = {
 }
 
 function HomePage() {
+  useSEO({
+    title: 'Creature Map',
+    description: 'Explore an interactive world map of folklore creatures, yokai, spirits, and local legends. Click any pin to read the full creature archive entry.',
+    url: '/map',
+  })
   const [creatures, setCreatures] = useState<Creature[]>([])
   const [mapLoading, setMapLoading] = useState(true)
   const [selected, setSelected] = useState<Creature | null>(null)

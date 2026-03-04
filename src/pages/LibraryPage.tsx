@@ -4,6 +4,7 @@ import { BookOpen, Search, SlidersHorizontal, Skull, Dices, Eye } from 'lucide-r
 import type { Creature, CreatureType } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
 import { CreatureCard } from '../components/CreatureCard'
+import { useSEO } from '../hooks/useSEO'
 
 const creatureTypeOptions: { value: CreatureType | 'all'; label: string }[] = [
   { value: 'all', label: 'All types' },
@@ -70,6 +71,31 @@ function EmptyState({
 }
 
 function LibraryPage() {
+  useSEO({
+    title: 'Creature Library',
+    description: 'Browse the full LocaLore bestiary — search, filter, and explore folklore creatures, yokai, spirits, and monsters by type, region, and danger rating.',
+    url: '/library',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'LocaLore Creature Library',
+      url: 'https://localore.vercel.app/library',
+      description: 'A searchable bestiary of folklore creatures from around the world, filterable by type, region, verification status, and danger rating.',
+      about: {
+        '@type': 'Thing',
+        name: 'Folklore Creatures',
+        description: 'Mythological entities, spirits, demons, yokai, and local legends documented from oral traditions and written folklore worldwide.',
+      },
+      isPartOf: { '@type': 'WebSite', name: 'LocaLore', url: 'https://localore.vercel.app' },
+      breadcrumb: {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'LocaLore', item: 'https://localore.vercel.app/' },
+          { '@type': 'ListItem', position: 2, name: 'Library', item: 'https://localore.vercel.app/library' },
+        ],
+      },
+    },
+  })
   const [creatures, setCreatures] = useState<Creature[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')

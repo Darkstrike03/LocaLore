@@ -1,6 +1,12 @@
 import { useState } from 'react'
+import { useSEO } from '../hooks/useSEO'
 
 function ContactPage() {
+  useSEO({
+    title: 'Contact',
+    description: 'Contact the LocaLore team with questions, removal requests, or feedback about the folklore archive.',
+    url: '/contact',
+  })
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
 
@@ -9,7 +15,7 @@ function ContactPage() {
     // lightweight client-side behavior: open mailto with the message
     const subject = encodeURIComponent('LocaLore contact')
     const body = encodeURIComponent(message)
-    window.location.href = `mailto:hello@example.com?subject=${subject}&body=${body}`
+    window.location.href = `mailto:otakuslibrary75@gmail.com?subject=${subject}&body=${body}`
     setSent(true)
   }
 

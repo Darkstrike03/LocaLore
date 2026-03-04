@@ -7,6 +7,7 @@ import { formatPrice } from '../lib/currency'
 import CardDisplay from '../components/cards/CardDisplay'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
 import RarityBadge from '../components/cards/RarityBadge'
+import { useSEO } from '../hooks/useSEO'
 
 function useVisible(ref: React.RefObject<Element | null>) {
   const [visible, setVisible] = useState(false)
@@ -57,6 +58,11 @@ function Countdown({ endsAt, auctionId }: { endsAt: string; auctionId: string })
 }
 
 export default function AuctionHousePage() {
+  useSEO({
+    title: 'Auction House',
+    description: 'Bid on rare and legendary folklore creature cards in the LocaLore Auction House. Win cards through competitive bidding with Anima currency.',
+    url: '/auction',
+  })
   const { user } = useAuth()
   const [auctions, setAuctions]   = useState<AuctionListing[]>([])
   const [loading, setLoading]     = useState(true)

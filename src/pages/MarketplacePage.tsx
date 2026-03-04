@@ -8,6 +8,7 @@ import { RARITY_META } from '../types/cards'
 import CardDisplay from '../components/cards/CardDisplay'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
 import RarityBadge from '../components/cards/RarityBadge'
+import { useSEO } from '../hooks/useSEO'
 
 function useVisible(ref: React.RefObject<Element | null>) {
   const [visible, setVisible] = useState(false)
@@ -21,6 +22,11 @@ function useVisible(ref: React.RefObject<Element | null>) {
 }
 
 export default function MarketplacePage() {
+  useSEO({
+    title: 'Creature Card Marketplace',
+    description: 'Buy and sell rare folklore creature cards in the LocaLore marketplace. Browse listings by rarity and trade with the community using Anima currency.',
+    url: '/market',
+  })
   const { user } = useAuth()
   const [listings, setListings]   = useState<MarketListing[]>([])
   const [loading, setLoading]     = useState(true)

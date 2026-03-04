@@ -1,4 +1,5 @@
 import { BookOpen, Globe, ScrollText, Users, Eye } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
 
 const PILLARS = [
   {
@@ -24,6 +25,67 @@ const PILLARS = [
 ]
 
 function AboutPage() {
+  useSEO({
+    title: 'About the Archive',
+    description: 'LocaLore is a living bestiary of folklore creatures stitched from local memory, oral tradition, and written lore. Learn about the project and its mission.',
+    url: '/about',
+    structuredData: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'What is LocaLore?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'LocaLore is a living bestiary and interactive world map of folklore creatures — yokai, spirits, demons, undead, and local legends from across the globe. It is a community-driven archive built from oral tradition, written lore, and user-submitted sightings.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'How do I submit a creature to LocaLore?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'You can submit a creature by navigating to the Submit page at https://localore.vercel.app/submit. You will need a free account. Submissions are reviewed by moderators before being verified and added to the main archive.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'Are the creatures on LocaLore real?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'The creatures documented on LocaLore come from real folklore traditions, oral history, and cultural memory. They are presented as documented accounts from those traditions. LocaLore treats folklore as cultural heritage rather than literal factual claims.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'What folklore traditions does LocaLore cover?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'LocaLore covers folklore from around the world including Japanese yokai (Kitsune, Oni, Kappa, Yuki-onna), Slavic spirits (Baba Yaga, Leshy), South Asian entities (Rakshasa, Vetala, Pishacha), Korean folklore (Dokkaebi, Gumiho), Chinese mythology (Jiangshi, Pixiu), Romanian (Strigoi), Celtic, and many more.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'What is Anima on LocaLore?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Anima is the in-site currency used for the LocaLore creature card marketplace and auction house. It is earned by contributing to the archive — submitting creatures, filing sighting reports, and engaging with community content. It cannot be purchased with real money.',
+            },
+          },
+        ],
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'LocaLore', item: 'https://localore.vercel.app/' },
+          { '@type': 'ListItem', position: 2, name: 'About', item: 'https://localore.vercel.app/about' },
+        ],
+      },
+    ],
+  })
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 animate-rise">
 

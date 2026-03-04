@@ -1,4 +1,11 @@
+import { useSEO } from '../hooks/useSEO'
+
 function PrivacyPolicyPage() {
+  useSEO({
+    title: 'Privacy Policy',
+    description: 'LocaLore privacy policy — what data we collect, how it is used, and your rights as a user of the folklore archive.',
+    url: '/privacy',
+  })
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 animate-rise">
       <header className="mb-6">
