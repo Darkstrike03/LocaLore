@@ -5,7 +5,7 @@ import MapControls from '../components/MapControls'
 import MapLegend from '../components/MapLegend'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
-import { Eye, MapPin, Skull, ShieldAlert, Sword, BookMarked, ChevronRight } from 'lucide-react'
+import { Eye, MapPin, Skull, ShieldAlert, Sword, BookMarked, ChevronRight, DoorOpen } from 'lucide-react'
 import CreatureOfTheRite from '../components/CreatureOfTheRite'
 import RecentlyWitnessed from '../components/RecentlyWitnessed'
 import type { Creature } from '../types/creature'
@@ -180,18 +180,32 @@ function HomePage() {
 
         <MapLegend />
 
-        {/* Mobile: open sidebar button */}
-        {selected && !sidebarVisible && (
-          <button
-            type="button"
-            onClick={() => setSidebarVisible(true)}
-            className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-xl border border-gold/40 bg-void/95 backdrop-blur-xl px-4 py-2.5 font-heading text-xs tracking-[0.2em] uppercase text-gold shadow-gold-glow md:hidden"
-          >
-            <Eye className="h-3.5 w-3.5" />
-            View lore
-          </button>
-        )}
       </div>
+
+      {/* Mobile: open sidebar when creature selected — fixed to escape Leaflet stacking context */}
+      {selected && !sidebarVisible && (
+        <button
+          type="button"
+          onClick={() => setSidebarVisible(true)}
+          className="fixed bottom-4 right-4 z-[500] flex items-center gap-2 rounded-xl border border-gold/40 bg-void/95 backdrop-blur-xl px-4 py-2.5 font-heading text-xs tracking-[0.2em] uppercase text-gold shadow-gold-glow md:hidden"
+        >
+          <Eye className="h-3.5 w-3.5" />
+          View lore
+        </button>
+      )}
+
+      {/* Mobile: open archive panel (Creature of the Rite + Recently Witnessed) */}
+      {!selected && !sidebarVisible && (
+        <button
+          type="button"
+          onClick={() => setSidebarVisible(true)}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[500] flex items-center gap-2 rounded-xl border border-gold/30 bg-void/95 backdrop-blur-xl px-5 py-2.5 font-heading text-xs tracking-[0.2em] uppercase text-gold/80 hover:text-gold hover:border-gold/50 transition-colors shadow-void-deep md:hidden"
+          aria-label="Open archive panel"
+        >
+          <DoorOpen className="h-4 w-4" />
+          The Archive
+        </button>
+      )}
 
       {/* ── SIDEBAR ── */}
       <aside

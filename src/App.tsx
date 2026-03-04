@@ -356,8 +356,8 @@ function App() {
         </Suspense>
       </main>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t border-app-border bg-void py-6 text-center">
+      {/* ── FOOTER — hidden on the map page (fullscreen viewport, no scrollable area) ── */}
+      {location.pathname !== '/map' && <footer className="border-t border-app-border bg-void py-6 text-center">
         <p className="font-heading text-[10px] tracking-[0.4em] text-parchment-dim uppercase">
           LocaLore · Forbidden Folklore Archive
         </p>
@@ -370,7 +370,7 @@ function App() {
           <a href="/terms" className="text-parchment-muted hover:text-parchment">Terms</a>
           <a href="/contact" className="text-parchment-muted hover:text-parchment">Contact</a>
         </nav>
-      </footer>
+      </footer>}
     </div>
   )
 }
