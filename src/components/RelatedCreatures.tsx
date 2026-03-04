@@ -123,14 +123,14 @@ export default function RelatedCreatures({ creature }: Props) {
       )}
 
       {relations.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 lg:w-2/3 sm:w-1/2 gap-2 sm:grid-cols-3">
           {relations.map(({ id, related }) => (
             <div key={id} className="relative group">
               <Link
                 to={`/creatures/${related.slug}`}
                 className="flex flex-col gap-1.5 rounded-xl border border-app-border bg-app-surface p-3 hover:border-gold/30 transition-colors"
               >
-                <div className="h-14 w-full overflow-hidden rounded-lg">
+                <div className="h-44 w-full overflow-hidden rounded-lg">
                   {related.image_url ? (
                     <img src={related.image_url} alt={related.name} className="h-full w-full object-cover opacity-80" />
                   ) : (
