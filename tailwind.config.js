@@ -135,6 +135,11 @@ export default {
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0)' },
           '50%': { boxShadow: '0 0 0 6px rgba(239,68,68,0.15)' },
         },
+        'scan-line': {
+          '0%':   { top: '0%',   opacity: '0.9' },
+          '50%':  { top: '100%', opacity: '0.6' },
+          '100%': { top: '0%',   opacity: '0.9' },
+        },
       },
       animation: {
         'pin-pulse': 'pin-pulse 2.2s ease-in-out infinite',
@@ -153,6 +158,8 @@ export default {
         'market-ticker':    'market-ticker 30s linear infinite',
         'count-up':         'count-up 300ms ease-out forwards',
         'auction-pulse':    'auction-pulse 2s ease-in-out infinite',
+        'scan-line':        'scan-line 2s linear infinite',
+        'scan-line':        'scan-line 2s linear infinite',
       },
     },
   },

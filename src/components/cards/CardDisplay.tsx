@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState } from 'react'
 import type { UserCard } from '../../types/cards'
 import { RARITY_META, GRADE_META } from '../../types/cards'
+import CardCircuitQR from './CardCircuitQR'
 
 // ─── Size presets ──────────────────────────────────────────────────────────────
 const SIZE = {
@@ -35,6 +36,7 @@ interface CardDisplayProps {
   size?: keyof typeof SIZE
   interactive?: boolean   // enables 3D tilt
   showGrade?: boolean
+  showQR?: boolean        // make embedded QR watermark visible (for Present-for-Trade mode)
   onClick?: () => void
   className?: string
   animDelay?: number       // ms, for staggered reveal
@@ -46,6 +48,7 @@ export default function CardDisplay({
   size = 'md',
   interactive = true,
   showGrade = true,
+  showQR = false,
   onClick,
   className = '',
   animDelay = 0,
@@ -66,8 +69,6 @@ export default function CardDisplay({
   const rarity = RARITY_META[definition.rarity]
   const grade  = GRADE_META[card.grade]
   const sz     = SIZE[size]
-
- 
 
   // ── 3D tilt on mouse move ──────────────────────────────────────────────────
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -251,7 +252,15 @@ export default function CardDisplay({
           </div>
           {/* Bottom fade */}
           <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-[#080810] to-transparent" />
+
         </div>
+
+        {/* ── Circuit QR overlay — covers entire card body ─────────── */}
+        <CardCircuitQR
+          cardId={card.id}
+          rarity={definition.rarity}
+          activated={showQR}
+        />
 
         {/* ── Card info ─────────────────────────────────────────────── */}
         <div className="flex flex-col gap-0.5 px-2 py-1.5">

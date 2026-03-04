@@ -31,9 +31,10 @@ SELECT
     WHEN c.verified = false AND c.creature_type IN ('demon','undead','shapeshifter') THEN 'remnant'
     ELSE 'whisper'
   END AS rarity,
-  -- Flavor text pulled from origin_story or a default
+  -- Prefer card_flavor (purpose-written for the card face).
+  -- Never fall back to a raw origin_story truncation — use a generic line instead.
   COALESCE(
-    NULLIF(LEFT(c.origin_story, 120), ''),
+    NULLIF(TRIM(c.card_flavor), ''),
     'A presence recorded in the archive. Handle with caution.'
   ) AS flavor_text,
   'default'  AS art_variant,

@@ -28,6 +28,8 @@ const CommunityHubPage    = lazy(() => import('./pages/CommunityHubPage'))
 const MarketplacePage     = lazy(() => import('./pages/MarketplacePage'))
 const AuctionHousePage    = lazy(() => import('./pages/AuctionHousePage'))
 const TradePage           = lazy(() => import('./pages/TradePage'))
+const PresentCardPage     = lazy(() => import('./pages/PresentCardPage'))
+const ScanTradePage       = lazy(() => import('./pages/ScanTradePage'))
 
 const navItems = [
   { to: '/map',         icon: MapPin,     label: 'Map' },
@@ -348,6 +350,8 @@ function App() {
           <Route path="/market" element={<MarketplacePage />} />
           <Route path="/auction" element={<AuctionHousePage />} />
           <Route path="/trade" element={<TradePage />} />
+          <Route path="/trade/present/:cardId" element={<PresentCardPage />} />
+          <Route path="/trade/scan" element={<ScanTradePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />

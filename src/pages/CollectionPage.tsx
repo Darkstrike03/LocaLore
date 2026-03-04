@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import html2canvas from 'html2canvas'
-import { useParams } from 'react-router-dom'
-import { Eye, LayoutGrid, List, Tag, ArrowUpDown, Filter, Bookmark, Globe, Gavel } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Eye, LayoutGrid, List, Tag, ArrowUpDown, Filter, Bookmark, Globe, Gavel, QrCode } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { UserCard, CardRarity, CardDefinition } from '../types/cards'
@@ -31,6 +31,7 @@ const CACHE_TTL = 3 * 60 * 1000 // 3 minutes
 
 export default function CollectionPage() {
   const { username } = useParams<{ username?: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
 
   // If no username param, show own collection
@@ -311,6 +312,19 @@ export default function CollectionPage() {
           <button type="button" onClick={() => setDisplayMode('list')} className={`p-1.5 rounded border ${displayMode === 'list' ? 'border-gold/40 text-gold' : 'border-app-border text-parchment-muted'}`}>
             <List className="h-3.5 w-3.5" />
           </button>
+
+          {/* Scan-to-trade camera button */}
+          {isOwn && (
+            <button
+              type="button"
+              title="Scan a card to trade"
+              onClick={() => navigate('/trade/scan')}
+              className="ml-1 flex items-center gap-1.5 rounded border border-sky-500/40 bg-sky-900/10 px-2.5 py-1.5 font-ui text-[10px] uppercase tracking-[0.15em] text-sky-400 hover:bg-sky-900/25 transition-colors"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Scan</span>
+            </button>
+          )}
         </div>
       </div>
       )}
@@ -554,6 +568,17 @@ export default function CollectionPage() {
                     Download
                   </button>
 
+                  {/* Present for Trade (own cards only) */}
+                  {isOwn && (
+                    <button
+                      type="button"
+                      onClick={() => { setViewingCard(null); navigate(`/trade/present/${vc.id}`) }}
+                      className="flex items-center justify-center gap-2 rounded-lg border border-sky-500/30 bg-sky-900/10 px-3 py-2.5 font-ui text-[11px] uppercase tracking-[0.15em] text-sky-400 hover:bg-sky-900/20 transition-colors"
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                      Present for Trade
+                    </button>
+                  )}
                   {/* List for sale (own cards only) */}
                   {isOwn && !vc.is_listed_market && !vc.is_listed_auction && (
                     <button
