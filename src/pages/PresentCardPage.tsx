@@ -1,12 +1,13 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Scan, Eye } from 'lucide-react'
+import { ArrowLeft, Scan, Eye, Download, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { UserCard, CardRarity } from '../types/cards'
 import { RARITY_META } from '../types/cards'
 import CardDisplay from '../components/cards/CardDisplay'
 import MagicCircleQR from '../components/MagicCircleQR'
+import { exportCardAsPNG } from '../lib/cardExport'
 
 // Map rarity -> accent colour for MagicCircleQR scan seal
 const RARITY_ACCENT: Record<CardRarity, string> = {
@@ -28,6 +29,8 @@ export default function PresentCardPage() {
   const [card, setCard]       = useState<FullCard | null>(null)
   const [loading, setLoading] = useState(true)
   const [isOwner, setIsOwner] = useState(false)
+
+  const [exportState, setExportState] = useState<'idle' | 'exporting' | 'done' | 'cors'>('idle')
 
   useEffect(() => {
     if (!cardId) return
@@ -63,6 +66,24 @@ export default function PresentCardPage() {
   const rarity    = RARITY_META[card.definition.rarity]
   const accent    = RARITY_ACCENT[card.definition.rarity]
   const tradeUrl  = `${window.location.origin}/trade/present/${card.id}`
+
+  async function handleExport() {
+    if (!card) return
+    setExportState('exporting')
+    try {
+      await exportCardAsPNG(card)
+      setExportState('done')
+      setTimeout(() => setExportState('idle'), 3000)
+    } catch (err) {
+      // cors_taint means the image was still downloaded but without stego
+      if (err instanceof Error && err.message === 'cors_taint') {
+        setExportState('cors')
+        setTimeout(() => setExportState('idle'), 4000)
+      } else {
+        setExportState('idle')
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-void via-app-background to-app-surface flex flex-col items-center justify-center px-4 py-12 gap-10">
@@ -110,8 +131,37 @@ export default function PresentCardPage() {
                 Show this seal to your counterpart
               </p>
               <p className="font-body text-xs text-parchment-muted leading-relaxed">
-                Your card binding circuits are now active. Have them scan the seal with their LocaLore camera to open a trade offer.
+                Your card's binding circuits are active. Have them scan the seal with their LocaLore camera — or share the PNG below for a fully digital trade.
               </p>
+
+              {/* Share card as stego PNG */}
+              <button
+                type="button"
+                onClick={() => void handleExport()}
+                disabled={exportState === 'exporting'}
+                className="flex items-center gap-2 self-start rounded-lg border px-4 py-2 font-ui text-[11px] uppercase tracking-[0.2em] transition-colors disabled:opacity-50"
+                style={{ borderColor: `${accent}66`, color: accent, background: `${accent}14` }}
+                onMouseEnter={e => (e.currentTarget.style.background = `${accent}26`)}
+                onMouseLeave={e => (e.currentTarget.style.background = `${accent}14`)}
+              >
+                {exportState === 'exporting' ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border border-current border-t-transparent" />
+                ) : exportState === 'done' ? (
+                  <CheckCircle className="h-3.5 w-3.5" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                {exportState === 'exporting' ? 'Encoding…'
+                  : exportState === 'done' ? 'Saved!'
+                  : exportState === 'cors' ? 'Saved (no hidden data)'
+                  : 'Save Card PNG'}
+              </button>
+
+              {exportState === 'cors' && (
+                <p className="font-ui text-[9px] text-amber-400/60 max-w-[220px] leading-relaxed">
+                  Image saved but the hidden circuit data couldn't be embedded (CORS restriction). The QR seal still works for in-person trades.
+                </p>
+              )}
             </>
           ) : (
             <>

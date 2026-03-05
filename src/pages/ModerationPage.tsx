@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle2, XCircle, Eye, MapPin, Skull, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, Eye, MapPin, Skull, Loader2, ShieldX } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import { slugify } from '../lib/slugify'
@@ -9,11 +9,23 @@ function ModerationPage() {
   const { user } = useAuth()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModerator, setIsModerator] = useState<boolean | null>(null)
   const [processingId, setProcessingId] = useState<string | null>(null)
 
   useEffect(() => {
-    loadSubmissions()
-  }, [])
+    if (!user) { setLoading(false); setIsModerator(false); return }
+    supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const ok = data?.role?.toLowerCase() === 'moderator'
+        setIsModerator(ok)
+        if (ok) loadSubmissions()
+        else setLoading(false)
+      })
+  }, [user])
 
   const loadSubmissions = async () => {
     setLoading(true)
@@ -106,6 +118,17 @@ function ModerationPage() {
     } finally {
       setProcessingId(null)
     }
+  }
+
+  if (!user || isModerator === false) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
+        <ShieldX className="h-10 w-10 text-parchment-muted/40" />
+        <p className="font-heading text-sm uppercase tracking-[0.3em] text-parchment-muted">
+          {!user ? 'Sign in to continue.' : 'Access restricted to moderators.'}
+        </p>
+      </div>
+    )
   }
 
   if (loading) {

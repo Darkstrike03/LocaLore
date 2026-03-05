@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import type { UserCard, CardRarity, CardDefinition } from '../types/cards'
 import { RARITY_META } from '../types/cards'
 import CardDisplay from '../components/cards/CardDisplay'
+import SkeletonCard from '../components/SkeletonCard'
 import CardDownload from '../components/cards/CardDownload'
 import RarityBadge from '../components/cards/RarityBadge'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
@@ -200,8 +201,11 @@ export default function CollectionPage() {
   }
 
   if (loading) return (
-    <div className="flex h-[60vh] items-center justify-center">
-      <Eye className="h-6 w-6 text-gold animate-flicker" />
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <div className="mb-8 h-8 w-48 rounded-lg bg-app-surface animate-pulse" />
+      <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
+      </div>
     </div>
   )
 

@@ -8,6 +8,7 @@ import { RARITY_META } from '../types/cards'
 import CardDisplay from '../components/cards/CardDisplay'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
 import RarityBadge from '../components/cards/RarityBadge'
+import SkeletonCard from '../components/SkeletonCard'
 import { useSEO } from '../hooks/useSEO'
 
 function useVisible(ref: React.RefObject<Element | null>) {
@@ -200,7 +201,9 @@ export default function MarketplacePage() {
 
           {/* Grid */}
           {loading ? (
-            <div className="flex justify-center py-20"><Eye className="h-6 w-6 text-gold animate-flicker" /></div>
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
           ) : filtered.length === 0 ? (
             <div className="py-20 text-center space-y-2">
               <p className="font-heading text-xl text-parchment-muted">The floor is bare.</p>

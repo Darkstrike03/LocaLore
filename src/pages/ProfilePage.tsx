@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 import { uploadImage } from '../lib/imgbb'
-import { Eye, Save } from 'lucide-react'
+import { Eye, Save, TrendingUp, TrendingDown, Minus, Footprints, MapPin } from 'lucide-react'
 import XPBadge from '../components/XPBadge'
+import CurrencyBadge from '../components/cards/CurrencyBadge'
+import DailyClaimButton from '../components/DailyClaimButton'
 
 function ProfilePage() {
   const { user } = useAuth()
@@ -15,6 +17,14 @@ function ProfilePage() {
   const [entriesLoading, setEntriesLoading] = useState(true)
   const [isModerator, setIsModerator] = useState(false)
   const [aiEntries, setAiEntries] = useState<any[]>([])
+
+  // ledger
+  const [ledger, setLedger]             = useState<any[]>([])
+  const [ledgerLoading, setLedgerLoading] = useState(true)
+
+  // sightings
+  const [userSightings, setUserSightings]       = useState<any[]>([])
+  const [sightingsLoading, setSightingsLoading] = useState(true)
 
   // form fields
   const [username, setUsername] = useState('')
@@ -81,6 +91,34 @@ function ProfilePage() {
       setEntriesLoading(false)
     })()
     return () => { mounted = false }
+  }, [user])
+
+  useEffect(() => {
+    if (!user) { setSightingsLoading(false); return }
+    supabase
+      .from('sighting_reports')
+      .select('id, description, latitude, longitude, created_at, creatures(name, slug, image_url)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        setUserSightings((data ?? []) as any[])
+        setSightingsLoading(false)
+      })
+  }, [user])
+
+  useEffect(() => {
+    if (!user) { setLedgerLoading(false); return }
+    supabase
+      .from('anima_ledger')
+      .select('id, amount, balance_after, reason, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        setLedger((data ?? []) as any[])
+        setLedgerLoading(false)
+      })
   }, [user])
 
   if (!user) {
@@ -325,6 +363,19 @@ function ProfilePage() {
             </form>
           )}
         </div>
+
+        {/* ── Daily claim ──────────────────────────────────────────────────── */}
+        <div className="mt-4">
+          <DailyClaimButton
+            onClaimed={() => {
+              // Refresh profile so anima_balance & streak shown by XPBadge are current
+              supabase.from('users').select('*').eq('id', user.id).single().then(({ data }) => {
+                if (data) setProfile(data)
+              })
+            }}
+          />
+        </div>
+
         {/* User entries */}
         <div className="mt-8 space-y-6">
           <h3 className="font-heading text-lg text-gold">Your entries</h3>
@@ -425,6 +476,91 @@ function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* ── My Sightings ───────────────────────────────────────────────────── */}
+        <div className="mt-8">
+          <h3 className="font-heading text-lg text-gold mb-3 flex items-center gap-2">
+            <Footprints className="h-4 w-4 text-gold/60" />
+            My Sightings
+          </h3>
+          {sightingsLoading ? (
+            <p className="text-parchment-muted text-sm">Loading sightings…</p>
+          ) : userSightings.length === 0 ? (
+            <p className="text-parchment-dim text-sm">You have not filed any sighting reports yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {userSightings.map((s) => {
+                const creature = s.creatures as any
+                return (
+                  <div key={s.id} className="flex items-start gap-3 rounded-xl border border-app-border bg-app-surface px-4 py-3">
+                    <div className="h-10 w-10 flex-shrink-0 rounded-md overflow-hidden bg-void/20 border border-app-border">
+                      {creature?.image_url
+                        ? <img src={creature.image_url} alt={creature.name} className="h-full w-full object-cover" />
+                        : <Eye className="h-5 w-5 m-2 text-parchment-dim" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {creature?.slug
+                          ? <Link to={`/creatures/${creature.slug}`} className="font-heading text-sm text-gold hover:text-gold/80 transition-colors">{creature.name}</Link>
+                          : <span className="font-heading text-sm text-gold">Unknown creature</span>}
+                        <span className="flex items-center gap-1 font-ui text-[10px] text-parchment-dim">
+                          <MapPin className="h-3 w-3" />
+                          {s.latitude.toFixed(3)}, {s.longitude.toFixed(3)}
+                        </span>
+                        <span className="font-ui text-[10px] text-parchment-dim/50 ml-auto">
+                          {new Date(s.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {s.description && (
+                        <p className="mt-1 font-body text-xs text-parchment-muted line-clamp-2">{s.description}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Anima Ledger ───────────────────────────────────────────────────── */}
+        <div className="mt-8">
+          <h3 className="font-heading text-lg text-gold mb-3">Anima Ledger</h3>
+          {ledgerLoading ? (
+            <p className="text-parchment-muted text-sm">Loading ledger…</p>
+          ) : ledger.length === 0 ? (
+            <p className="text-parchment-dim text-sm">No transactions yet.</p>
+          ) : (
+            <div className="rounded-xl border border-app-border bg-app-surface overflow-hidden">
+              <div className="divide-y divide-app-border">
+                {ledger.map((row) => {
+                  const isCredit = row.amount > 0
+                  const isNeutral = row.amount === 0
+                  const Icon = isNeutral ? Minus : isCredit ? TrendingUp : TrendingDown
+                  const colour = isNeutral ? 'text-parchment-muted' : isCredit ? 'text-emerald-400' : 'text-red-400'
+                  const label = (row.reason as string)
+                    .replace(/_/g, ' ')
+                    .replace(/\b\w/g, (c: string) => c.toUpperCase())
+                  return (
+                    <div key={row.id} className="flex items-center gap-3 px-4 py-3">
+                      <Icon className={`h-3.5 w-3.5 shrink-0 ${colour}`} />
+                      <span className="flex-1 font-ui text-xs text-parchment-muted">{label}</span>
+                      <span className={`font-ui text-xs tabular-nums ${colour}`}>
+                        {isCredit ? '+' : ''}{row.amount.toLocaleString()} ⬡
+                      </span>
+                      <span className="font-ui text-[10px] text-parchment-dim/50 tabular-nums hidden sm:block">
+                        Balance: <CurrencyBadge anima={row.balance_after} size="xs" />
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="border-t border-app-border px-4 py-2">
+                <p className="font-ui text-[10px] text-parchment-dim/50">Showing last 20 transactions</p>
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
       {/* If profile missing, open modal-like blocking UI */}
       {needsCompletion && (

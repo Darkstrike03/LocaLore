@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Gavel, Eye, Clock, TrendingUp, X, ChevronUp } from 'lucide-react'
+import { Gavel, Clock, TrendingUp, X, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { AuctionListing } from '../types/cards'
@@ -7,6 +7,7 @@ import { formatPrice } from '../lib/currency'
 import CardDisplay from '../components/cards/CardDisplay'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
 import RarityBadge from '../components/cards/RarityBadge'
+import SkeletonCard from '../components/SkeletonCard'
 import { useSEO } from '../hooks/useSEO'
 
 function useVisible(ref: React.RefObject<Element | null>) {
@@ -300,7 +301,9 @@ export default function AuctionHousePage() {
         <div className={`mx-auto max-w-7xl transition-all duration-700 ${s3Vis ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <h2 className="font-heading text-2xl tracking-[0.12em] text-amber-400 mb-8">All Live Auctions</h2>
           {loading ? (
-            <div className="flex justify-center py-20"><Eye className="h-6 w-6 text-gold animate-flicker" /></div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
           ) : auctions.length === 0 ? (
             <div className="py-20 text-center space-y-2">
               <p className="font-heading text-xl text-parchment-muted">The chamber awaits its first bid.</p>

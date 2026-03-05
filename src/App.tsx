@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react'
 import { Route, Routes, NavLink, Navigate, useLocation } from 'react-router-dom'
-import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers } from 'lucide-react'
+import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers, Bookmark } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import AuthModal from './components/AuthModal'
 import LiveCounterBar from './components/LiveCounterBar'
@@ -30,6 +30,7 @@ const AuctionHousePage    = lazy(() => import('./pages/AuctionHousePage'))
 const TradePage           = lazy(() => import('./pages/TradePage'))
 const PresentCardPage     = lazy(() => import('./pages/PresentCardPage'))
 const ScanTradePage       = lazy(() => import('./pages/ScanTradePage'))
+const BookmarksPage       = lazy(() => import('./pages/BookmarksPage'))
 const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
 
 const navItems = [
@@ -188,6 +189,19 @@ function App() {
                     <span className="h-6 w-6 rounded-full bg-void/10 flex items-center justify-center border border-app-border text-parchment-muted"><MapPin className="h-3.5 w-3.5" /></span>
                   </div>
                 </NavLink>
+                <NavLink
+                  to="/bookmarks"
+                  title="Saved creatures"
+                  className={({ isActive }) =>
+                    `flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+                      isActive
+                        ? 'border-gold/40 text-gold bg-gold/10'
+                        : 'border-app-border text-parchment-muted hover:border-gold/40 hover:text-gold'
+                    }`
+                  }
+                >
+                  <Bookmark className="h-3.5 w-3.5" />
+                </NavLink>
                 <button
                   type="button"
                   onClick={() => void signOut()}
@@ -297,6 +311,18 @@ function App() {
                     </div>
                     Profile
                   </NavLink>
+                  <NavLink
+                    to="/bookmarks"
+                    onClick={() => setMobileNavOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-lg border px-3 py-3 text-sm font-ui uppercase tracking-[0.2em] transition hover:border-gold/40 hover:text-gold border-l-2 pl-2.5 ${
+                        isActive ? 'bg-gold/10 text-gold border-gold' : 'border-app-border text-parchment-muted border-l-transparent'
+                      }`
+                    }
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    Saved
+                  </NavLink>
                   <button
                     type="button"
                     onClick={() => { void signOut(); setMobileNavOpen(false) }}
@@ -353,6 +379,7 @@ function App() {
           <Route path="/trade" element={<TradePage />} />
           <Route path="/trade/present/:cardId" element={<PresentCardPage />} />
           <Route path="/trade/scan" element={<ScanTradePage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />

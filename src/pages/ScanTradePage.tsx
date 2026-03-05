@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Scan, X, Camera, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Scan, X, Camera, AlertTriangle, CheckCircle, Upload, ZapOff } from 'lucide-react'
 import jsQR from 'jsqr'
+import { stegDecode } from '../lib/steganography'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { UserCard } from '../types/cards'
@@ -22,6 +23,11 @@ export default function ScanTradePage() {
   const rafRef        = useRef<number>(0)
   const scanLockedRef = useRef(false)
 
+  const [mode, setMode]             = useState<'camera' | 'upload'>('camera')
+  const modeRef                      = useRef<'camera' | 'upload'>('camera')
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadLoading, setUploadLoading] = useState(false)
+
   const [step, setStep]             = useState<Step>('scanning')
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [scannedCard, setScannedCard] = useState<FullCard | null>(null)
@@ -30,6 +36,9 @@ export default function ScanTradePage() {
   const [animaAmount, setAnimaAmount] = useState('')
   const [myBalance, setMyBalance]     = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // Keep modeRef in sync with mode state (safe to read in rAF callbacks)
+  useEffect(() => { modeRef.current = mode }, [mode])
 
   // ── Start camera ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -61,6 +70,8 @@ export default function ScanTradePage() {
       const video  = videoRef.current
       const canvas = canvasRef.current
       if (!video || !canvas || scanLockedRef.current) { tick(); return }
+      // Idle when upload mode is active — skip scan but keep loop alive
+      if (modeRef.current !== 'camera') { tick(); return }
       const ctx = canvas.getContext('2d', { willReadFrequently: true })
       if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) { tick(); return }
       canvas.width  = video.videoWidth
@@ -128,6 +139,85 @@ export default function ScanTradePage() {
     }
   }
 
+  // ── Handle uploaded card PNG (steganography decode) ──────────────────────
+  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setUploadLoading(true)
+
+    try {
+      // Load the file into an image element
+      const objectUrl = URL.createObjectURL(file)
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image()
+        el.onload  = () => resolve(el)
+        el.onerror = () => reject(new Error('failed_load'))
+        el.src = objectUrl
+      })
+      URL.revokeObjectURL(objectUrl)
+
+      // Draw to canvas and extract pixel data
+      const canvas = document.createElement('canvas')
+      canvas.width  = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+      ctx.drawImage(img, 0, 0)
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const decoded   = stegDecode(imageData)
+
+      // Validate that the decoded value is a UUID
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!decoded || !UUID_RE.test(decoded)) {
+        setUploadError('No LocaLore data found. Make sure you uploaded an original PNG exported from the app.')
+        setUploadLoading(false)
+        return
+      }
+      const cardId = decoded
+
+      // Fetch the card from the database
+      const { data } = await supabase
+        .from('user_cards')
+        .select('*, definition:card_definitions(*, creature:creatures(*))')
+        .eq('id', cardId)
+        .maybeSingle()
+
+      if (!data) {
+        setUploadError('Card not found or is no longer available.')
+        setUploadLoading(false)
+        return
+      }
+      const card = data as FullCard
+      if (card.user_id === user?.id) {
+        setUploadError("That's your own card — share it with a counterpart.")
+        setUploadLoading(false)
+        return
+      }
+
+      // Success — proceed to the same confirm step as camera scan
+      setScannedCard(card)
+      if (user) {
+        const [{ data: mine }, { data: u }] = await Promise.all([
+          supabase.from('user_cards')
+            .select('*, definition:card_definitions(*, creature:creatures(*))')
+            .eq('user_id', user.id)
+            .eq('is_locked', false)
+            .eq('is_listed_market', false)
+            .eq('is_listed_auction', false),
+          supabase.from('users').select('anima_balance').eq('id', user.id).maybeSingle(),
+        ])
+        setMyCards((mine ?? []) as FullCard[])
+        setMyBalance(u?.anima_balance ?? 0)
+      }
+      setStep('confirm')
+    } catch {
+      setUploadError('Failed to read image. Is it a valid PNG?')
+    } finally {
+      setUploadLoading(false)
+    }
+  }
+
   async function sendTradeOffer() {
     if (!user || !scannedCard) return
     if (!offeredCardId && (!animaAmount || parseInt(animaAmount) <= 0)) {
@@ -187,7 +277,36 @@ export default function ScanTradePage() {
             <h1 className="font-heading text-2xl tracking-[0.1em] text-amber-400">Scan to Trade</h1>
           </div>
 
-          {cameraError ? (
+          {/* Mode tabs — placed above camera so user picks first */}
+          <div className="flex w-full max-w-sm overflow-hidden rounded-lg border border-app-border">
+            <button
+              type="button"
+              onClick={() => setMode('camera')}
+              className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 font-ui text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                mode === 'camera'
+                  ? 'bg-amber-900/30 text-amber-400'
+                  : 'text-parchment-muted hover:text-parchment'
+              }`}
+            >
+              <Camera className="h-3 w-3" />
+              Scan QR
+            </button>
+            <div className="w-px bg-app-border" />
+            <button
+              type="button"
+              onClick={() => { setMode('upload'); setUploadError(null) }}
+              className={`flex flex-1 items-center justify-center gap-1.5 py-2.5 font-ui text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                mode === 'upload'
+                  ? 'bg-amber-900/30 text-amber-400'
+                  : 'text-parchment-muted hover:text-parchment'
+              }`}
+            >
+              <Upload className="h-3 w-3" />
+              Upload PNG
+            </button>
+          </div>
+
+          {mode === 'camera' && (cameraError ? (
             <div className="flex flex-col items-center gap-3 rounded-xl border border-red-500/30 bg-red-900/10 p-6 text-center">
               <AlertTriangle className="h-6 w-6 text-red-400" />
               <p className="font-ui text-xs text-red-400">{cameraError}</p>
@@ -219,12 +338,43 @@ export default function ScanTradePage() {
               <div className="absolute inset-0 pointer-events-none"
                 style={{ background: 'radial-gradient(circle 96px at 50% 50%, transparent 50%, rgba(0,0,0,0.5) 100%)' }} />
             </div>
-          )}
+          ))}
 
-          <div className="flex items-center gap-2 font-ui text-[10px] text-parchment-muted/50 uppercase tracking-[0.3em]">
-            <Camera className="h-3 w-3" />
-            <span>Point at a LocaLore QR code</span>
-          </div>
+          {/* ── Upload mode ────────────────────────────────────────────────── */}
+          {mode === 'upload' && (
+            <div className="w-full max-w-sm flex flex-col items-center gap-4">
+              <p className="font-body text-xs text-parchment-muted/70 text-center leading-relaxed">
+                Drop a LocaLore card PNG shared by a friend. The hidden binding circuits carry the card ID — no camera needed.
+              </p>
+
+              <label
+                className="relative w-full flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-amber-400/30 bg-amber-900/10 py-10 cursor-pointer hover:border-amber-400/50 hover:bg-amber-900/20 transition-all"
+              >
+                <input
+                  type="file"
+                  accept="image/png"
+                  className="sr-only"
+                  onChange={e => void handleImageUpload(e)}
+                  disabled={uploadLoading}
+                />
+                {uploadLoading ? (
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-400/30 border-t-amber-400" />
+                ) : (
+                  <Upload className="h-8 w-8 text-amber-400/40" />
+                )}
+                <span className="font-ui text-[10px] uppercase tracking-[0.3em] text-amber-400/60">
+                  {uploadLoading ? 'Decoding circuits…' : 'Choose card PNG'}
+                </span>
+              </label>
+
+              {uploadError && (
+                <div className="flex items-start gap-2 w-full rounded-lg border border-red-500/30 bg-red-900/10 p-3">
+                  <ZapOff className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+                  <p className="font-ui text-[11px] text-red-400 leading-relaxed">{uploadError}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
