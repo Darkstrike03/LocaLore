@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Tag, Search, SlidersHorizontal, ShoppingCart, X } from 'lucide-react'
+import { Tag, Search, SlidersHorizontal, ShoppingCart, X } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../context/AuthContext'
 import type { MarketListing, CardRarity } from '../types/cards'
