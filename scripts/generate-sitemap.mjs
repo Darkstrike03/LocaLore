@@ -22,26 +22,66 @@ async function fetchRows(table, select) {
   return res.json()
 }
 
+const TODAY = new Date().toISOString().split('T')[0]
+
+const STATIC_PAGES = [
+  { path: '/',           changefreq: 'weekly',  priority: '1.0' },
+  { path: '/library',   changefreq: 'daily',   priority: '0.9' },
+  { path: '/leaderboard', changefreq: 'daily', priority: '0.7' },
+  { path: '/hub',        changefreq: 'daily',   priority: '0.7' },
+  { path: '/market',     changefreq: 'hourly',  priority: '0.7' },
+  { path: '/auction',    changefreq: 'hourly',  priority: '0.7' },
+  { path: '/about',      changefreq: 'monthly', priority: '0.5' },
+  { path: '/privacy',    changefreq: 'monthly', priority: '0.3' },
+  { path: '/terms',      changefreq: 'monthly', priority: '0.3' },
+  { path: '/contact',    changefreq: 'monthly', priority: '0.4' },
+]
+
+function makeUrl({ loc, changefreq, priority, lastmod = TODAY }) {
+  return [
+    '  <url>',
+    `    <loc>${loc}</loc>`,
+    `    <lastmod>${lastmod}</lastmod>`,
+    `    <changefreq>${changefreq}</changefreq>`,
+    `    <priority>${priority}</priority>`,
+    '  </url>',
+  ].join('\n')
+}
+
 async function main() {
   const base = process.env.PUBLIC_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://localore.vercel.app')
 
-  // get creature slugs
+  // Static pages
+  const staticItems = STATIC_PAGES.map(p =>
+    makeUrl({ loc: `${base}${p.path}`, changefreq: p.changefreq, priority: p.priority })
+  )
+
+  // Dynamic: creature slugs
   const creatures = await fetchRows('creatures', 'slug')
-  const creatureUrls = (creatures || []).filter(c => c.slug).map(c => `${base}/creatures/${c.slug}`)
+  const creatureItems = (creatures || []).filter(c => c.slug).map(c =>
+    makeUrl({ loc: `${base}/creatures/${c.slug}`, changefreq: 'monthly', priority: '0.8' })
+  )
 
-  // get user profile usernames
+  // Dynamic: public user profiles
   const users = await fetchRows('users', 'username')
-  const profileUrls = (users || []).filter(u => u.username).map(u => `${base}/profile/${u.username}`)
+  const profileItems = (users || []).filter(u => u.username).map(u =>
+    makeUrl({ loc: `${base}/profile/${u.username}`, changefreq: 'weekly', priority: '0.6' })
+  )
 
-  const all = [...creatureUrls, ...profileUrls]
+  const allItems = [...staticItems, ...creatureItems, ...profileItems]
+  const total = STATIC_PAGES.length + creatureItems.length + profileItems.length
 
-  const items = all.map(url => `  <url>\n    <loc>${url}</loc>\n  </url>`).join('\n')
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</urlset>`
+  const xml = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+    allItems.join('\n'),
+    '</urlset>',
+  ].join('\n')
 
   const outDir = path.resolve('public')
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
   fs.writeFileSync(path.join(outDir, 'sitemap.xml'), xml, 'utf8')
-  console.log('Wrote public/sitemap.xml with', all.length, 'entries')
+  console.log(`Wrote public/sitemap.xml with ${total} entries (${STATIC_PAGES.length} static, ${creatureItems.length} creatures, ${profileItems.length} profiles)`)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
