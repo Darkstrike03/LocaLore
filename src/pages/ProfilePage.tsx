@@ -7,6 +7,7 @@ import { Eye, Save, TrendingUp, TrendingDown, Minus, Footprints, MapPin } from '
 import XPBadge from '../components/XPBadge'
 import CurrencyBadge from '../components/cards/CurrencyBadge'
 import DailyClaimButton from '../components/DailyClaimButton'
+import DailyMissions from '../components/DailyMissions'
 
 function ProfilePage() {
   const { user } = useAuth()
@@ -365,10 +366,17 @@ function ProfilePage() {
         </div>
 
         {/* ── Daily claim ──────────────────────────────────────────────────── */}
-        <div className="mt-4">
+        <div className="mt-4 space-y-3">
           <DailyClaimButton
             onClaimed={() => {
               // Refresh profile so anima_balance & streak shown by XPBadge are current
+              supabase.from('users').select('*').eq('id', user.id).single().then(({ data }) => {
+                if (data) setProfile(data)
+              })
+            }}
+          />
+          <DailyMissions
+            onRewardClaimed={() => {
               supabase.from('users').select('*').eq('id', user.id).single().then(({ data }) => {
                 if (data) setProfile(data)
               })

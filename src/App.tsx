@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react'
 import { Route, Routes, NavLink, Navigate, useLocation } from 'react-router-dom'
-import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers, Bookmark } from 'lucide-react'
+import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers, Bookmark, Flame } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import AuthModal from './components/AuthModal'
 import LiveCounterBar from './components/LiveCounterBar'
@@ -31,6 +31,7 @@ const TradePage           = lazy(() => import('./pages/TradePage'))
 const PresentCardPage     = lazy(() => import('./pages/PresentCardPage'))
 const ScanTradePage       = lazy(() => import('./pages/ScanTradePage'))
 const BookmarksPage       = lazy(() => import('./pages/BookmarksPage'))
+const RitualPage          = lazy(() => import('./pages/RitualPage'))
 const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
 
 const navItems = [
@@ -44,6 +45,7 @@ const navItems = [
 
 const communityItems = [
   { to: '/hub',        icon: Users,          label: 'Hub' },
+  { to: '/rite',       icon: Flame,          label: 'The Rite' },
   { to: '/vault',      icon: Archive,        label: 'Vault' },
   { to: '/collection', icon: Layers,         label: 'Collection' },
   { to: '/market',     icon: Tag,            label: 'Market' },
@@ -375,6 +377,7 @@ function App() {
           <Route path="/collection" element={<CollectionPage />} />
           <Route path="/collection/:username" element={<CollectionPage />} />
           <Route path="/market" element={<MarketplacePage />} />
+          <Route path="/rite" element={<RitualPage />} />
           <Route path="/auction" element={<AuctionHousePage />} />
           <Route path="/trade" element={<TradePage />} />
           <Route path="/trade/present/:cardId" element={<PresentCardPage />} />

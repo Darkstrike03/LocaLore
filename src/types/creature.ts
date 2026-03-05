@@ -7,7 +7,7 @@ export type CreatureType =
   | 'undead'
   | 'other'
 
-export type CreatureSource = 'user_submitted' | 'ai_collected'
+export type CreatureSource = 'user_submitted' | 'ai_collected' | 'ritual_conjured'
 
 export type ReactionType =
   | 'seen' | 'chilling' | 'disbelief'

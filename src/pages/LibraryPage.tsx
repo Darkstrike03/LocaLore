@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BookOpen, Search, SlidersHorizontal, Skull, Dices, Eye, LayoutGrid, BookMarked } from 'lucide-react'
+import { BookOpen, Search, SlidersHorizontal, Skull, Dices, Eye, LayoutGrid, BookMarked, Flame } from 'lucide-react'
 import type { Creature, CreatureType } from '../types/creature'
 import { supabase } from '../lib/supabaseClient'
 import { CreatureCard } from '../components/CreatureCard'
@@ -151,9 +151,15 @@ function LibraryPage() {
     [creatures],
   )
 
+  const ritualCreatures = useMemo(
+    () => creatures.filter((c) => c.source === 'ritual_conjured'),
+    [creatures],
+  )
+
   const filtered = useMemo(
     () => {
       const base = creatures.filter((c) => {
+        if (c.source === 'ritual_conjured') return false // shown in dedicated section
         const matchesSearch =
           !search ||
           c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -320,6 +326,19 @@ function LibraryPage() {
           <option value="danger_asc">Danger ↑ lowest</option>
         </select>
       </div>
+
+      {/* Conjured by the Rite — ritual creatures section */}
+      {ritualCreatures.length > 0 && (
+        <div className="mb-8 rounded-2xl border border-purple-500/25 bg-purple-900/10 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Flame className="h-3.5 w-3.5 text-purple-400" />
+            <span className="font-ui text-xs uppercase tracking-[0.2em] text-purple-300">Conjured by the Rite</span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {ritualCreatures.map(c => <CreatureCard key={c.id} creature={c} />)}
+          </div>
+        </div>
+      )}
 
       {/* Creature list — grid or shelf */}
       <section aria-label="Creature list">

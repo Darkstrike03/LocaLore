@@ -91,3 +91,50 @@ export function currencyColorClass(totalAnima: number): string {
   if (totalAnima >= ANIMA_PER_OBOL * 10)  return 'text-parchment'
   return 'text-parchment-muted'
 }
+
+// ─── Streak system ────────────────────────────────────────────────────────────
+
+/** Anima cost to purchase one streak freeze */
+export const STREAK_FREEZE_COST = 50
+
+/** One-time bonus awarded ON TOP of the base daily reward on milestone days */
+export const STREAK_MILESTONE_BONUSES: Record<number, number> = {
+  7:    100,
+  14:   250,
+  28:   500,
+  30:   750,
+  50:   1500,
+  100:  4000,
+  200:  10000,
+  300:  25000,
+  500:  60000,
+}
+
+/** Named milestone days — shown on the progress bar */
+export const MILESTONE_DAYS: readonly number[] = [7, 14, 28, 30, 50, 100, 200, 300, 500]
+
+/** Base daily anima per streak tier (before any milestone bonus) */
+export function streakBaseReward(streak: number): number {
+  if (streak >= 28) return 80
+  if (streak >= 14) return 50
+  if (streak >= 7)  return 20
+  if (streak >= 3)  return 8
+  return 2
+}
+
+/** Next named milestone day above the current streak */
+export function nextStreakMilestone(streak: number): number {
+  for (const m of MILESTONE_DAYS) {
+    if (streak < m) return m
+  }
+  // Beyond 500: every 100 days
+  return Math.ceil((streak + 1) / 100) * 100
+}
+
+/** Last named milestone day that has already been passed (0 if none) */
+export function prevStreakMilestone(streak: number): number {
+  for (let i = MILESTONE_DAYS.length - 1; i >= 0; i--) {
+    if (streak >= MILESTONE_DAYS[i]) return MILESTONE_DAYS[i]
+  }
+  return 0
+}

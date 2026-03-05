@@ -11,7 +11,7 @@ export type CardRarity =
 
 export type CardGrade = 'mint' | 'near_mint' | 'weathered' | 'cursed'
 
-export type AcquiredVia = 'pack' | 'trade' | 'event_drop' | 'achievement' | 'market' | 'auction'
+export type AcquiredVia = 'pack' | 'trade' | 'event_drop' | 'achievement' | 'market' | 'auction' | 'ritual'
 
 export type TradeStatus = 'pending' | 'accepted' | 'declined' | 'cancelled' | 'countered'
 
