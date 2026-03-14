@@ -4,7 +4,7 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-92.9%25-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-Component%20Library-61DAFB?logo=react)](https://react.dev/)
-[![License](https://img.shields.io/badge/License-Custom%20Security--First-darkred)](LICENSE)
+[![License](https://img.shields.io/badge/License-Custom%20Non--Commercial-darkred)](LICENSE)
 
 ## Overview
 
@@ -51,3 +51,14 @@ LocaLore is an interactive, collaborative platform for documenting and exploring
    ```bash
    git clone https://github.com/Darkstrike03/LocaLore.git
    cd LocaLore
+   ```
+
+## 📜 License
+
+This project is released under the **LocaLore Community Non-Commercial License (LCNCL) v1.0**.
+
+- ✅ Allowed: personal, educational, research, and non-profit use; modification; redistribution
+- ❌ Not allowed: commercial/profit use without written permission
+- ❌ Not allowed: unlawful, abusive, harmful, or exploitative use
+
+See [LICENSE](LICENSE) for full terms.
