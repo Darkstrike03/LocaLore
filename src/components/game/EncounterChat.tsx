@@ -8,9 +8,21 @@ interface Message {
   content: string
 }
 
+interface StoryProfile {
+  name: string
+  age: string
+  occupation: string
+  location: string
+  personalFear: string
+  lastNormalMoment: string
+  bondDetail: string
+  creatureAngle: string
+  openingMessage: string
+}
+
 interface EncounterChatProps {
   card: UserCard & { definition: NonNullable<UserCard['definition']> }
-  onGameOver: (result: 'win' | 'loss', upgradeDetails?: any) => void
+  onGameOver: (result: 'win' | 'loss', context: { messages: Message[]; story: StoryProfile | null; endingText: string; upgradeDetails?: any }) => void
 }
 
 const ENCOUNTER_DURATION_MS = 5 * 60 * 1000
@@ -25,34 +37,38 @@ export default function EncounterChat({ card, onGameOver }: EncounterChatProps) 
   const [lastRequestAt, setLastRequestAt] = useState<number>(0)
   const [hasEnded, setHasEnded] = useState(false)
   const [encounterStartTime, setEncounterStartTime] = useState<number>(0)
+  const [story, setStory] = useState<StoryProfile | null>(null)
+  const [storyLoading, setStoryLoading] = useState(true)
+  const [storyError, setStoryError] = useState<string | null>(null)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const creature = card.definition.creature
 
-  // Initial creeping text message
   useEffect(() => {
-    setMessages([{
-      role: 'assistant',
-      content: `hey... are you there? i think something just moved outside the door and it sounds wrong. i dont know if i should stay or run.`
-    }])
-  }, [creature.name])
-
-  useEffect(() => {
+    setMessages([])
+    setInput('')
+    setLoading(false)
     setTimeLeft(ENCOUNTER_DURATION_MS)
-    setHasEnded(false)
+    setError(null)
     setLastRequestAt(0)
-    setEncounterStartTime(Date.now())
+    setHasEnded(false)
+    setEncounterStartTime(0)
+    setStory(null)
+    setStoryLoading(true)
+    setStoryError(null)
+
+    fetchStory()
   }, [creature.name])
 
   useEffect(() => {
-    if (loading || hasEnded) return
+    if (loading || hasEnded || encounterStartTime === 0) return
 
     const timer = setInterval(() => {
       setTimeLeft(prev => Math.max(prev - 1000, 0))
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [loading, hasEnded])
+  }, [loading, hasEnded, encounterStartTime])
 
   useEffect(() => {
     if (timeLeft <= 0 && !hasEnded) {
@@ -70,9 +86,60 @@ export default function EncounterChat({ card, onGameOver }: EncounterChatProps) 
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
+  async function fetchStory() {
+    setStoryLoading(true)
+    setStoryError(null)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error("No active session")
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/encounter-story`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ cardId: card.id })
+      })
+
+      if (!res.ok) {
+        const text = await res.text()
+        let errorMessage = "Failed to establish victim connection."
+        try {
+          const errorData = JSON.parse(text)
+          if (errorData?.error) {
+            errorMessage = errorData.error
+          } else if (typeof text === 'string' && text.trim()) {
+            errorMessage = text
+          }
+        } catch {
+          if (typeof text === 'string' && text.trim()) {
+            errorMessage = text
+          }
+        }
+        throw new Error(errorMessage)
+      }
+
+      const data = await res.json()
+      if (!data.story || !data.story.openingMessage) {
+        throw new Error("Story generation returned invalid data.")
+      }
+
+      setStory(data.story)
+      setMessages([{ role: 'assistant', content: data.story.openingMessage }])
+      setEncounterStartTime(Date.now())
+    } catch (err: any) {
+      console.error(err)
+      setStoryError(err.message || "Unable to establish connection with the victim.")
+    } finally {
+      setStoryLoading(false)
+    }
+  }
+
   async function handleSend(e?: React.FormEvent) {
     if (e) e.preventDefault()
-    if (!input.trim() || loading || timeLeft <= 0 || hasEnded) return
+    if (!input.trim() || loading || timeLeft <= 0 || hasEnded || storyLoading || !story) return
 
     const now = Date.now()
     if (now - lastRequestAt < MIN_REQUEST_INTERVAL_MS) {
@@ -104,13 +171,26 @@ export default function EncounterChat({ card, onGameOver }: EncounterChatProps) 
         body: JSON.stringify({
           cardId: card.id,
           messages: newMessages,
-          elapsedSeconds
+          elapsedSeconds,
+          story: JSON.parse(JSON.stringify(story))
         })
       })
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => null)
-        const errorMessage = errorData?.error || "Failed to commune with the entity."
+        const text = await res.text()
+        let errorMessage = "Failed to commune with the entity."
+        try {
+          const errorData = JSON.parse(text)
+          if (errorData?.error) {
+            errorMessage = errorData.error
+          } else if (typeof text === 'string' && text.trim()) {
+            errorMessage = text
+          }
+        } catch {
+          if (typeof text === 'string' && text.trim()) {
+            errorMessage = text
+          }
+        }
         throw new Error(errorMessage)
       }
 
@@ -139,12 +219,56 @@ export default function EncounterChat({ card, onGameOver }: EncounterChatProps) 
     }
   }
 
+  async function generateEnding(result: 'win' | 'loss') {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error("No active session")
+
+    const lastFewMessages = messages.slice(-8).map((message) => ({
+      role: message.role,
+      content: message.content,
+    }))
+
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/encounter-ending`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({
+        cardId: card.id,
+        result,
+        story: JSON.parse(JSON.stringify(story)),
+        creatureName: creature.name,
+        lastFewMessages,
+      })
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      let errorMessage = 'Failed to generate ending story.'
+      try {
+        const errorData = JSON.parse(text)
+        errorMessage = errorData.error || errorMessage
+      } catch {
+        if (typeof text === 'string' && text.trim()) {
+          errorMessage = text
+        }
+      }
+      throw new Error(errorMessage)
+    }
+
+    const data = await res.json()
+    return data.ending || 'The story ends here.'
+  }
+
   async function handleEncounterEnd(result: 'win' | 'loss') {
     if (hasEnded) return
     setHasEnded(true)
     setLoading(true)
 
     try {
+      const endingText = await generateEnding(result)
+
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error("No active session")
 
@@ -165,12 +289,43 @@ export default function EncounterChat({ card, onGameOver }: EncounterChatProps) 
       }
 
       const data = await res.json()
-      onGameOver(result, data)
+      onGameOver(result, { messages, story, endingText, upgradeDetails: data })
     } catch (err: any) {
       console.error(err)
-      setError("Failed to record the outcome. The void fluctuates...")
+      setError(err.message || "Failed to record the outcome. The void fluctuates...")
       setLoading(false)
     }
+  }
+
+  if (storyLoading || storyError) {
+    return (
+      <div className="flex flex-col h-[75vh] max-w-3xl mx-auto border border-app-border bg-void/80 rounded-xl overflow-hidden shadow-void-deep relative backdrop-blur-md">
+        <div className="bg-app-surface/90 border-b border-app-border p-4 flex items-center justify-between z-10">
+          <div>
+            <h2 className="font-heading text-lg tracking-[0.1em] text-crimson animate-pulse">Establishing connection...</h2>
+            <p className="font-ui text-[10px] uppercase tracking-[0.2em] text-parchment-muted">Building the victim profile</p>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          {storyError ? (
+            <>
+              <p className="font-body text-parchment-muted max-w-lg">{storyError}</p>
+              <button
+                onClick={fetchStory}
+                className="mt-6 inline-flex items-center justify-center px-5 py-3 rounded-full bg-crimson text-white text-sm font-semibold hover:bg-crimson/90 transition-all"
+              >
+                Retry connection
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="h-10 w-10 rounded-full border-2 border-crimson animate-spin mb-6" />
+              <p className="font-body text-parchment-muted max-w-md">Establishing connection with the victim. Please wait...</p>
+            </>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
