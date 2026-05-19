@@ -32,6 +32,7 @@ const PresentCardPage     = lazy(() => import('./pages/PresentCardPage'))
 const ScanTradePage       = lazy(() => import('./pages/ScanTradePage'))
 const BookmarksPage       = lazy(() => import('./pages/BookmarksPage'))
 const RitualPage          = lazy(() => import('./pages/RitualPage'))
+const EncounterPage       = lazy(() => import('./pages/EncounterPage'))
 const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
 
 const navItems = [
@@ -45,6 +46,7 @@ const navItems = [
 
 const communityItems = [
   { to: '/hub',        icon: Users,          label: 'Hub' },
+  { to: '/encounter',  icon: Skull,          label: 'The Encounter' },
   { to: '/rite',       icon: Flame,          label: 'The Rite' },
   { to: '/vault',      icon: Archive,        label: 'Vault' },
   { to: '/collection', icon: Layers,         label: 'Collection' },
@@ -378,6 +380,7 @@ function App() {
           <Route path="/collection/:username" element={<CollectionPage />} />
           <Route path="/market" element={<MarketplacePage />} />
           <Route path="/rite" element={<RitualPage />} />
+          <Route path="/encounter" element={<EncounterPage />} />
           <Route path="/auction" element={<AuctionHousePage />} />
           <Route path="/trade" element={<TradePage />} />
           <Route path="/trade/present/:cardId" element={<PresentCardPage />} />
