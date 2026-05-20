@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react'
 import { Route, Routes, NavLink, Navigate, useLocation } from 'react-router-dom'
-import { Eye, BookOpen, MapPin, Scroll, Info, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers, Bookmark, Flame } from 'lucide-react'
+import { Eye, BookOpen, MapPin, Scroll, User, LogOut, X, Menu, Skull, BookMarked, Trophy, Users, Tag, Gavel, ArrowRightLeft, ChevronDown, Archive, Layers, Bookmark, Flame, Calendar } from 'lucide-react'
 import 'leaflet/dist/leaflet.css'
 import AuthModal from './components/AuthModal'
 import LiveCounterBar from './components/LiveCounterBar'
@@ -33,6 +33,7 @@ const ScanTradePage       = lazy(() => import('./pages/ScanTradePage'))
 const BookmarksPage       = lazy(() => import('./pages/BookmarksPage'))
 const RitualPage          = lazy(() => import('./pages/RitualPage'))
 const EncounterPage       = lazy(() => import('./pages/EncounterPage'))
+const CalendarPage        = lazy(() => import('./pages/CalendarPage'))
 const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
 
 const navItems = [
@@ -41,7 +42,7 @@ const navItems = [
   { to: '/grimoire',    icon: BookMarked, label: 'Grimoire' },
   { to: '/leaderboard', icon: Trophy,     label: 'Order' },
   { to: '/submit',      icon: Scroll,     label: 'Submit' },
-  { to: '/about',       icon: Info,       label: 'About' },
+  { to: '/calendar',    icon: Calendar,   label: 'Calendar' },
 ]
 
 const communityItems = [
@@ -386,6 +387,7 @@ function App() {
           <Route path="/trade/present/:cardId" element={<PresentCardPage />} />
           <Route path="/trade/scan" element={<ScanTradePage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/terms" element={<TermsPage />} />
