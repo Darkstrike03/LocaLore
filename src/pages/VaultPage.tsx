@@ -76,9 +76,6 @@ export default function VaultPage() {
 
     // 2. For each rarity, pick a random card_definition
     const cardResults: (UserCard & { definition: NonNullable<UserCard['definition']> })[] = []
-    // Track copies minted within this pack open so the same def drawn twice
-    // gets consecutive unique serials instead of both landing on copies_minted+1.
-    const localMinted = new Map<string, number>()
 
     for (const rarity of rarities) {
       const { data: defs } = await supabase
@@ -96,31 +93,25 @@ export default function VaultPage() {
         : defs
       const def = eligible[Math.floor(Math.random() * eligible.length)]
 
-      // Mint new copy — use localMinted so duplicate def draws in one pack
-      // each get their own unique serial number.
-      const base = localMinted.has(def.id)
-        ? localMinted.get(def.id)!
-        : (def.copies_minted ?? 0)
-      const serial = base + 1
-      localMinted.set(def.id, serial)
-
       const grade = def.is_event_exclusive ? 'mint' : 'near_mint'
 
-      const { data: newCard } = await supabase
-        .from('user_cards')
-        .insert({
-          user_id: user.id, card_def_id: def.id,
-          serial_number: serial, acquired_via: 'pack', grade,
-        })
-        .select('*')
-        .single()
+      // Use atomic mint function to prevent duplicate serial numbers
+      const { data: mintResult, error: mintError } = await supabase.rpc('mint_card', {
+        p_user_id: user.id,
+        p_card_def_id: def.id,
+        p_acquired_via: 'pack',
+        p_grade: grade,
+      })
 
-      // Increment copies_minted to the highest serial assigned for this def
-      await supabase.from('card_definitions')
-        .update({ copies_minted: serial })
-        .eq('id', def.id)
+      if (mintError || !mintResult) {
+        console.error('Failed to mint card:', mintError)
+        continue
+      }
 
-      if (newCard) cardResults.push({ ...newCard, definition: { ...def, copies_minted: serial } })
+      const newCard = mintResult.card as UserCard
+      const newCopiesMinted = mintResult.copies_minted as number
+
+      if (newCard) cardResults.push({ ...newCard, definition: { ...def, copies_minted: newCopiesMinted } })
     }
 
     // 3. Guard — if no cards could be minted (empty card_definitions), abort
