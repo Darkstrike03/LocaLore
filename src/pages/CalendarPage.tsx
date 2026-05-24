@@ -295,6 +295,15 @@ const EVENTS: ArchiveEvent[] = [
     body: 'The eve before Persian New Year. Spirits of the dead visit homes.',
     accent: 'border-orange-300/40 bg-orange-950/30 text-orange-200',
   },
+  {
+    key: 'nale_ba',
+    startMonth: 4, startDay: 1,
+    endMonth: 4,  endDay: 1,
+    emoji: '👻',
+    title: 'Nale Ba',
+    body: 'A witch knocks on doors at night, mimicking loved ones. Write “Come Tomorrow” to survive.',
+    accent: 'border-orange-300/40 bg-red-950/30 text-orange-200',
+  },
 ]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
