@@ -77,20 +77,22 @@ export default function MarketplacePage() {
       setBuyLoad(false)
       return
     }
-    // Transfer card
-    const newBalance = balance - listing.price_anima
-    await supabase.from('user_cards').update({ user_id: user.id, acquired_via: 'market', is_listed_market: false }).eq('id', listing.user_card_id)
-    await supabase.from('market_listings').update({ status: 'sold', buyer_id: user.id, sold_at: new Date().toISOString() }).eq('id', listing.id)
-    await supabase.from('users').update({ anima_balance: newBalance }).eq('id', user.id)
-    // Credit seller
-    if (listing.seller_id) {
-      await supabase.rpc('increment_anima', { uid: listing.seller_id, amount: listing.price_anima }).then(() => null)
+    try {
+      const { error } = await supabase.rpc('purchase_marketplace_card', { p_listing_id: listing.id })
+      if (error) {
+        setBuyError(error.message || 'Purchase failed. Please try again.')
+        setBuyLoad(false)
+        return
+      }
+      const newBalance = balance - listing.price_anima
+      setBalance(newBalance)
+      setBuying(null)
+      setListings(prev => prev.filter(l => l.id !== listing.id))
+      setBuyLoad(false)
+    } catch (err) {
+      setBuyError('Purchase failed. Please try again.')
+      setBuyLoad(false)
     }
-    await supabase.from('anima_ledger').insert({ user_id: user.id, amount: -listing.price_anima, balance_after: newBalance, reason: `Purchased: ${listing.user_card?.definition?.creature?.name}`, reference_id: listing.id })
-    setBalance(newBalance)
-    setBuying(null)
-    setListings(prev => prev.filter(l => l.id !== listing.id))
-    setBuyLoad(false)
   }
 
   return (
